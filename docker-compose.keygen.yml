@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  keygen:
+    build:
+      context: .
+      dockerfile: Dockerfile.keygen
+    container_name: hikvision-keygen
+    ports:
+      - "5800:5800"
+    environment:
+      - KEYGEN_ADMIN_PASSWORD=${KEYGEN_ADMIN_PASSWORD:-hy8104905}
+    volumes:
+      - keygen_data:/data/.hikvision_downloader
+    restart: unless-stopped
+
+volumes:
+  keygen_data:

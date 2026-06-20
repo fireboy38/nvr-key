@@ -2,7 +2,11 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0e1f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>注册机 · Web 管理台</title>
   <style>
     /* ============== 设计变量 - 深色玻璃拟态主题 ============== */
@@ -69,7 +73,20 @@
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
+
+    /* iOS 输入框去默认样式 */
+    input, textarea, select, button {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      border-radius: 0;
+    }
+    input[type="date"] { min-height: 44px; }
 
     /* 背景装饰 - 流动的光晕 */
     body::before {
@@ -109,7 +126,9 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
+      min-height: 100dvh;  /* iOS 16+ 动态视口高度 */
       padding: 20px;
+      padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)) 20px;
     }
 
     .login-card {
@@ -820,17 +839,188 @@
     .empty-state svg { width: 48px; height: 48px; opacity: 0.4; margin-bottom: 12px; }
 
     /* ============== 响应式 ============== */
+
+    /* 大屏手机及以下 (≤768px) */
     @media (max-width: 768px) {
-      .header { padding: 12px 16px; }
-      .header .info { display: none; }
-      .tabs { padding: 0 8px; overflow-x: auto; }
-      .tab { padding: 14px 16px; white-space: nowrap; }
-      .tab span { display: none; }
-      .content { padding: 0 12px; margin: 20px auto; }
-      .card { padding: 20px; }
-      .lc { flex-direction: column; }
+      /* 让所有可点击元素至少 44px 高（iOS HIG 推荐） */
+      .btn { min-height: 44px; }
+      .tab { min-height: 44px; }
+
+      /* 登录页移动端 */
+      .login-wrap { padding: 16px; }
+      .login-card { padding: 36px 24px 28px; border-radius: var(--r-lg); }
+      .login-card h1 { font-size: 21px; }
+      .login-card p { font-size: 12px; margin-bottom: 24px; }
+      .login-logo { width: 64px; height: 64px; margin-bottom: 18px; }
+      .login-logo svg { width: 32px; height: 32px; }
+      .login-card input {
+        padding: 14px 16px;
+        font-size: 16px;  /* iOS 防止输入时页面缩放 */
+        margin-bottom: 16px;
+      }
+      .login-card button {
+        padding: 14px;
+        font-size: 15px;
+      }
+
+      /* Header - 移动端不 sticky，让 tabs 单独 sticky */
+      .header {
+        padding: 10px 14px;
+        padding-top: max(10px, env(safe-area-inset-top));
+        position: static;
+      }
+      .header-logo { width: 32px; height: 32px; border-radius: 8px; }
+      .header-logo svg { width: 18px; height: 18px; }
+      .header h1 { font-size: 15px; }
+      .header .info { gap: 8px; font-size: 11px; }
+      .header .info span { display: none; }  /* 隐藏服务器地址，保留退出 */
+      .header button { padding: 6px 12px; font-size: 11px; }
+
+      /* Tab 栏 - sticky 在顶部 */
+      .tabs {
+        padding: 0 8px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: rgba(11, 14, 31, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+      .tabs::-webkit-scrollbar { display: none; }
+      .tab {
+        padding: 14px 14px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        font-size: 13px;
+      }
+      .tab svg { width: 18px; height: 18px; }
+      /* 移动端保留文字 + 图标，更清晰 */
+      .tab span { display: inline; }
+
+      /* 内容区 */
+      .content {
+        padding: 0 12px;
+        margin: 16px auto 32px;
+      }
+      .card {
+        padding: 18px 16px;
+        border-radius: var(--r-md);
+      }
+      .card h2 {
+        font-size: 15px;
+        margin-bottom: 16px;
+      }
+
+      /* 表单 */
+      .fg { margin-bottom: 14px; }
+      .fg label { font-size: 12px; margin-bottom: 6px; }
+      .fg input, .fg select, .fg textarea {
+        padding: 12px 14px;
+        font-size: 16px;  /* iOS 防止缩放：≥16px */
+        min-height: 44px;
+      }
+      .fg textarea { min-height: 110px; }
+
+      /* 授权类型卡片 - 横向滚动选择 */
+      .lc {
+        flex-direction: row;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        margin: 0 -16px 14px;
+        padding: 0 16px;
+        gap: 10px;
+      }
+      .lc::-webkit-scrollbar { display: none; }
+      .lc-card {
+        flex: 0 0 110px;
+        padding: 14px 10px;
+      }
+      .lc-card .nm { font-size: 14px; }
+      .lc-card .ds { font-size: 11px; }
+
+      /* 主按钮全宽 */
+      .btn-p, .btn-g { width: 100%; }
+
+      /* 生成结果区 - 注册码字号缩小 */
+      .rb {
+        padding: 20px 16px;
+        margin-top: 16px;
+      }
+      .rb .st { font-size: 13px; }
+      .rb .key {
+        font-size: 20px;
+        letter-spacing: 2px;
+        word-break: break-all;
+        line-height: 1.4;
+      }
+      .rb .inf { font-size: 12px; word-break: break-all; }
+
+      /* 表格 - 横向滚动 */
+      .card table { display: block; overflow-x: auto; white-space: nowrap; scrollbar-width: thin; }
+      .card thead, .card tbody { display: table; width: max-content; min-width: 100%; }
+      .card th, .card td { padding: 10px 12px; }
+
+      /* 历史记录表格列宽 */
+      .card th:first-child, .card td:first-child { min-width: 110px; }
+      .card .mono { font-size: 12px; }
+
+      /* 工具栏 */
+      .ab {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .ab .sp { flex-basis: 100%; height: 0; }
+      .ab .btn-sm { flex: 1; min-width: 0; padding: 7px 8px; font-size: 12px; }
+      .ab .btn-sm svg { width: 14px; height: 14px; }
+
+      /* 分页 */
+      .pager { flex-direction: column; gap: 10px; }
+      .pager > div { display: flex; gap: 8px; width: 100%; }
+      .pager .btn-sm { flex: 1; }
+
+      /* 验证结果 */
+      .vr { padding: 18px 14px; margin-top: 14px; }
+      .vr .st { font-size: 17px; }
+      .vr .dt { font-size: 12px; word-break: break-all; }
+
+      /* 表单 row */
       .fr { flex-direction: column; gap: 0; }
-      .rb .key { font-size: 22px; letter-spacing: 3px; }
+    }
+
+    /* 小手机 (≤380px) - 进一步压缩 */
+    @media (max-width: 380px) {
+      .login-card { padding: 36px 24px 32px; }
+      .login-card h1 { font-size: 20px; }
+      .login-logo { width: 64px; height: 64px; }
+      .login-logo svg { width: 30px; height: 30px; }
+
+      .card { padding: 16px 14px; }
+      .tab { padding: 12px 12px; font-size: 12px; }
+      .tab svg { width: 16px; height: 16px; }
+
+      .rb .key { font-size: 17px; letter-spacing: 1px; }
+    }
+
+    /* 横屏 (高度 < 500px) - 登录页压缩 */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .login-wrap { min-height: 100vh; align-items: flex-start; padding: 20px; }
+      .login-card { padding: 24px 32px; }
+      .login-logo { width: 56px; height: 56px; margin-bottom: 14px; }
+      .login-card h1 { font-size: 20px; }
+      .login-card p { margin-bottom: 18px; }
+      .login-card input { padding: 10px 14px; margin-bottom: 12px; }
+    }
+
+    /* 触屏设备优化 - 去掉 hover 效果 */
+    @media (hover: none) {
+      .lc-card:hover { transform: none; }
+      .btn-p:hover, .btn-g:hover { transform: none; }
+      .tab:hover { color: var(--text-muted); }
+      tr:hover td { background: transparent; }
     }
   </style>
 </head>

@@ -343,7 +343,7 @@ def api_export(body):
 
     buf = io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow(["机器码", "注册码", "授权类型", "过期日期", "操作人", "生成时间"])
+    writer.writerow(["机器码", "注册码", "授权类型", "过期日期", "备注", "生成时间"])
     for r in rows:
         writer.writerow([
             r["machine_code"],

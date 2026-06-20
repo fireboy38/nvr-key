@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+ENV/
+
+# IDE / 编辑器
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 运行时生成的数据 / 缓存
+.hikvision_downloader/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# 本地部署脚本可能产生的日志
+*.log
+
+# 本地环境变量文件
+.env
+.env.local
+
+# 测试与覆盖率
+.pytest_cache/
+.coverage
+htmlcov/

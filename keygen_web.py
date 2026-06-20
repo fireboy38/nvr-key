@@ -1,44 +1,55 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-注册机 Web 版后端 — 单文件，零第三方依赖
-启动: python keygen_web.py
-访问: http://localhost:5800
+注册机 Web 版后端 — 单文件，零第三方依赖。
+
+启动:
+    python keygen_web.py
+
+访问:
+    http://localhost:5800
+
+环境变量:
+    KEYGEN_ADMIN_PASSWORD  管理密码（默认 hy8104905）
+    KEYGEN_PORT            监听端口（默认 5800）
+    KEYGEN_HOST            监听地址（默认 0.0.0.0）
 """
 
 import os
-import sys
 import json
-import hmac
-import hashlib
-import datetime
 import sqlite3
 import secrets
 import threading
+import datetime
+import csv
+import io
+import importlib.util
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
-import importlib.util
 
 # ============================================================
 # 配置
 # ============================================================
 
-HOST = "0.0.0.0"
-PORT = 5800
+HOST = os.environ.get("KEYGEN_HOST", "0.0.0.0")
+PORT = int(os.environ.get("KEYGEN_PORT", "5800"))
 ADMIN_PASSWORD = os.environ.get("KEYGEN_ADMIN_PASSWORD", "hy8104905")
-SESSION_TTL = 7200  # 2小时
+SESSION_TTL = 7200  # 秒，2 小时
 
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".hikvision_downloader")
 os.makedirs(DATA_DIR, exist_ok=True)
 DB_PATH = os.path.join(DATA_DIR, "keygen_web.db")
 
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # ============================================================
 # 加载 license_manager（绕过 core/__init__.py）
 # ============================================================
 
-_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 _spec = importlib.util.spec_from_file_location(
-    "_license_manager", os.path.join(_BASE_DIR, "core", "license_manager.py"))
+    "_license_manager",
+    os.path.join(_BASE_DIR, "core", "license_manager.py"),
+)
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)
 
@@ -54,24 +65,55 @@ LICENSE_NAMES = {
     LICENSE_TYPE_LIFETIME: "终身版",
 }
 
+# 16 位十六进制字符集合，用于校验机器码
+_HEX_CHARS = set("0123456789ABCDEF")
+
+
 # ============================================================
-# 数据库初始化
+# 数据库
 # ============================================================
 
-def init_db():
+def _get_db():
+    """打开一个 SQLite 连接，调用方负责关闭。"""
     conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("""CREATE TABLE IF NOT EXISTS records (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        machine_code TEXT NOT NULL,
-        activation_key TEXT NOT NULL,
-        license_type TEXT NOT NULL,
-        expiry_date TEXT,
-        operator TEXT DEFAULT '',
-        created_at TEXT NOT NULL
-    )""")
-    conn.commit()
-    conn.close()
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db():
+    """初始化数据库表结构。"""
+    with _get_db() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS records (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                machine_code  TEXT    NOT NULL,
+                activation_key TEXT   NOT NULL,
+                license_type  TEXT    NOT NULL,
+                expiry_date   TEXT,
+                operator      TEXT    DEFAULT '',
+                created_at    TEXT    NOT NULL
+            )
+        """)
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_records_created_at "
+            "ON records(created_at DESC)"
+        )
+
+
+def _save_record(machine_code, activation_key, license_type, expiry_date, operator):
+    """保存一条生成记录。"""
+    with _get_db() as conn:
+        conn.execute(
+            "INSERT INTO records "
+            "(machine_code, activation_key, license_type, expiry_date, operator, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                machine_code, activation_key, license_type,
+                expiry_date or "", operator or "web",
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            ),
+        )
+
 
 # ============================================================
 # Session
@@ -80,27 +122,63 @@ def init_db():
 _sessions = {}
 _session_lock = threading.Lock()
 
+
 def create_session():
+    """创建一个新的会话 token。"""
     token = secrets.token_urlsafe(32)
     with _session_lock:
         _sessions[token] = datetime.datetime.now().timestamp() + SESSION_TTL
     return token
 
+
 def check_session(token):
+    """检查 token 是否有效；过期会自动清除。"""
+    if not token:
+        return False
     with _session_lock:
-        if token not in _sessions:
+        expiry = _sessions.get(token)
+        if expiry is None:
             return False
-        if _sessions[token] < datetime.datetime.now().timestamp():
-            del _sessions[token]
+        if expiry < datetime.datetime.now().timestamp():
+            _sessions.pop(token, None)
             return False
         return True
 
+
 def destroy_session(token):
+    """销毁指定会话。"""
     with _session_lock:
         _sessions.pop(token, None)
 
+
 # ============================================================
-# API
+# 工具函数
+# ============================================================
+
+def _normalize_machine_code(raw):
+    """
+    清理并校验机器码：去除分隔符，转大写。
+    返回 (machine_code, error)。校验通过时 error 为 None。
+    """
+    if not raw:
+        return "", "机器码不能为空"
+    mc = raw.strip().replace("-", "").replace(" ", "").upper()
+    if len(mc) != 16 or not all(c in _HEX_CHARS for c in mc):
+        return mc, "机器码格式无效，需 16 位十六进制字符"
+    return mc, None
+
+
+def _sanitize_int(value, default, minimum=1, maximum=1000):
+    """安全地把请求参数转成 int，越界或非法时回退到 default。"""
+    try:
+        v = int(value)
+    except (TypeError, ValueError):
+        return default
+    return max(minimum, min(maximum, v))
+
+
+# ============================================================
+# API 处理函数（均返回 dict）
 # ============================================================
 
 def api_login(body):
@@ -112,179 +190,290 @@ def api_login(body):
     print(f"[keygen_web] 登录失败: 输入密码长度={len(input_pwd)}")
     return {"ok": False, "error": "密码错误"}
 
+
 def api_generate(body):
-    mc = body.get("machine_code", "").strip().replace("-", "").replace(" ", "").upper()
-    if not mc or len(mc) != 16 or not all(c in "0123456789ABCDEF" for c in mc):
-        return {"ok": False, "error": "机器码格式无效，需 16 位十六进制字符"}
-    lt = body.get("license_type", LICENSE_TYPE_STANDARD)
-    exp = body.get("expiry_date") or None
+    mc, err = _normalize_machine_code(body.get("machine_code", ""))
+    if err:
+        return {"ok": False, "error": err}
+
+    license_type = body.get("license_type", LICENSE_TYPE_STANDARD)
+    expiry_date = body.get("expiry_date") or None
+
     try:
-        r = generate_key(mc, lt, exp)
+        result = generate_key(mc, license_type, expiry_date)
     except ValueError as e:
         return {"ok": False, "error": str(e)}
-    _save_record(mc, r["activation_key"], lt, r.get("expiry_date") or "", body.get("operator", "web"))
-    return {"ok": True, "activation_key": r["activation_key"], "license_type": lt,
-            "license_name": LICENSE_NAMES.get(lt, lt),
-            "expiry_date": r.get("expiry_date") or "永不过期", "machine_code": mc}
+
+    _save_record(
+        mc, result["activation_key"], license_type,
+        result.get("expiry_date") or "", body.get("operator", "web"),
+    )
+    return {
+        "ok": True,
+        "activation_key": result["activation_key"],
+        "license_type": license_type,
+        "license_name": LICENSE_NAMES.get(license_type, license_type),
+        "expiry_date": result.get("expiry_date") or "永不过期",
+        "machine_code": mc,
+    }
+
 
 def api_batch(body):
-    codes = body.get("machine_codes", "")
-    lt = body.get("license_type", LICENSE_TYPE_STANDARD)
+    raw_codes = body.get("machine_codes", "")
+    license_type = body.get("license_type", LICENSE_TYPE_STANDARD)
+    operator = body.get("operator", "web")
     results = []
-    for i, line in enumerate([l.strip() for l in codes.split("\n") if l.strip()], 1):
-        mc = line.replace("-", "").replace(" ", "").upper()
-        if len(mc) != 16 or not all(c in "0123456789ABCDEF" for c in mc):
-            results.append({"machine_code": line, "activation_key": "", "error": "格式无效"})
+
+    for line in raw_codes.split("\n"):
+        line = line.strip()
+        if not line:
             continue
+
+        mc, err = _normalize_machine_code(line)
+        if err:
+            results.append({
+                "machine_code": line,
+                "activation_key": "",
+                "error": "格式无效",
+            })
+            continue
+
         try:
-            r = generate_key(mc, lt)
-            _save_record(mc, r["activation_key"], lt, r.get("expiry_date") or "", body.get("operator", "web"))
-            results.append({"machine_code": mc, "activation_key": r["activation_key"],
-                           "license_type": lt, "expiry_date": r.get("expiry_date") or "永不过期", "ok": True})
-        except Exception as e:
-            results.append({"machine_code": mc, "activation_key": "", "error": str(e)})
+            result = generate_key(mc, license_type)
+            _save_record(
+                mc, result["activation_key"], license_type,
+                result.get("expiry_date") or "", operator,
+            )
+            results.append({
+                "machine_code": mc,
+                "activation_key": result["activation_key"],
+                "license_type": license_type,
+                "expiry_date": result.get("expiry_date") or "永不过期",
+                "ok": True,
+            })
+        except ValueError as e:
+            results.append({
+                "machine_code": mc,
+                "activation_key": "",
+                "error": str(e),
+            })
+
     return {"ok": True, "results": results}
 
+
 def api_verify(body):
-    mc = body.get("machine_code", "").strip().replace("-", "").replace(" ", "").upper()
-    key = body.get("activation_key", "").strip()
-    if not mc or not key:
-        return {"ok": False, "error": "请输入机器码和注册码"}
+    mc, err = _normalize_machine_code(body.get("machine_code", ""))
+    if err:
+        return {"ok": False, "error": err}
+
+    key = (body.get("activation_key") or "").strip()
+    if not key:
+        return {"ok": False, "error": "请输入激活密钥"}
+
     try:
-        r = validate_key(mc, key)
-        return {"ok": True, "valid": r["valid"], "license_type": r.get("license_type"),
-                "license_name": LICENSE_NAMES.get(r.get("license_type", ""), ""),
-                "expiry_date": r.get("expiry_date") or "永不过期", "error": r.get("error")}
-    except Exception as e:
+        result = validate_key(mc, key)
+        return {
+            "ok": True,
+            "valid": result["valid"],
+            "license_type": result.get("license_type"),
+            "license_name": LICENSE_NAMES.get(result.get("license_type", ""), ""),
+            "expiry_date": result.get("expiry_date") or "永不过期",
+            "error": result.get("error"),
+        }
+    except ValueError as e:
         return {"ok": False, "error": str(e)}
 
+
 def api_history(body):
-    page = int(body.get("page", 1))
-    size = int(body.get("size", 20))
-    off = (page - 1) * size
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT COUNT(*) FROM records")
-    total = c.fetchone()[0]
-    c.execute("SELECT id,machine_code,activation_key,license_type,expiry_date,operator,created_at FROM records ORDER BY id DESC LIMIT ? OFFSET ?", (size, off))
-    rows = [{"id": r[0], "machine_code": r[1], "activation_key": r[2], "license_type": r[3],
-             "license_name": LICENSE_NAMES.get(r[3], r[3]), "expiry_date": r[4] or "永不过期",
-             "operator": r[5], "created_at": r[6]} for r in c.fetchall()]
-    conn.close()
-    return {"ok": True, "records": rows, "total": total, "page": page, "size": size}
+    page = _sanitize_int(body.get("page"), 1, 1, 100000)
+    size = _sanitize_int(body.get("size"), 20, 1, 200)
+    offset = (page - 1) * size
+
+    with _get_db() as conn:
+        total = conn.execute("SELECT COUNT(*) AS c FROM records").fetchone()["c"]
+        rows = conn.execute(
+            "SELECT id, machine_code, activation_key, license_type, "
+            "       expiry_date, operator, created_at "
+            "FROM records ORDER BY id DESC LIMIT ? OFFSET ?",
+            (size, offset),
+        ).fetchall()
+
+    records = [{
+        "id": r["id"],
+        "machine_code": r["machine_code"],
+        "activation_key": r["activation_key"],
+        "license_type": r["license_type"],
+        "license_name": LICENSE_NAMES.get(r["license_type"], r["license_type"]),
+        "expiry_date": r["expiry_date"] or "永不过期",
+        "operator": r["operator"],
+        "created_at": r["created_at"],
+    } for r in rows]
+
+    return {"ok": True, "records": records, "total": total, "page": page, "size": size}
+
 
 def api_delete(body):
     rid = body.get("id")
-    if not rid:
+    if rid is None:
         return {"ok": False, "error": "缺少 id"}
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("DELETE FROM records WHERE id=?", (rid,))
-    conn.commit()
-    conn.close()
+    try:
+        rid = int(rid)
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "id 必须为整数"}
+
+    with _get_db() as conn:
+        conn.execute("DELETE FROM records WHERE id = ?", (rid,))
     return {"ok": True}
+
 
 def api_clear(body):
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("DELETE FROM records")
-    conn.commit()
-    conn.close()
+    with _get_db() as conn:
+        conn.execute("DELETE FROM records")
     return {"ok": True}
 
-def api_export(body):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT machine_code,activation_key,license_type,expiry_date,operator,created_at FROM records ORDER BY id DESC")
-    lines = ["机器码,注册码,授权类型,过期日期,操作人,生成时间"]
-    for r in c.fetchall():
-        lines.append(f"{r[0]},{r[1]},{LICENSE_NAMES.get(r[2], r[2])},{r[3] or '永不过期'},{r[4]},{r[5]}")
-    conn.close()
-    return {"ok": True, "csv": "\n".join(lines)}
 
-def _save_record(mc, key, lt, exp, operator):
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("INSERT INTO records (machine_code,activation_key,license_type,expiry_date,operator,created_at) VALUES (?,?,?,?,?,?)",
-                 (mc, key, lt, exp, operator, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-    conn.commit()
-    conn.close()
+def api_export(body):
+    """导出全部记录为 CSV 字符串。"""
+    with _get_db() as conn:
+        rows = conn.execute(
+            "SELECT machine_code, activation_key, license_type, "
+            "       expiry_date, operator, created_at "
+            "FROM records ORDER BY id DESC"
+        ).fetchall()
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["机器码", "注册码", "授权类型", "过期日期", "操作人", "生成时间"])
+    for r in rows:
+        writer.writerow([
+            r["machine_code"],
+            r["activation_key"],
+            LICENSE_NAMES.get(r["license_type"], r["license_type"]),
+            r["expiry_date"] or "永不过期",
+            r["operator"],
+            r["created_at"],
+        ])
+    return {"ok": True, "csv": buf.getvalue()}
+
+
+# ============================================================
+# 路由表
+# ============================================================
+
+# 无需登录的可访问路由
+PUBLIC_ROUTES = {"/api/login"}
+
+# 需要登录才能访问的路由 -> 处理函数
+PROTECTED_ROUTES = {
+    "/api/logout":   lambda body, handler: _handle_logout(body, handler),
+    "/api/generate": lambda body, handler: api_generate(body),
+    "/api/batch":    lambda body, handler: api_batch(body),
+    "/api/verify":   lambda body, handler: api_verify(body),
+    "/api/history":  lambda body, handler: api_history(body),
+    "/api/delete":   lambda body, handler: api_delete(body),
+    "/api/clear":    lambda body, handler: api_clear(body),
+    "/api/export":   lambda body, handler: api_export(body),
+}
+
+
+def _handle_logout(body, handler):
+    """登出处理：从 Authorization 头中提取 token 并销毁。"""
+    auth = handler.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        destroy_session(auth[7:])
+    return {"ok": True}
+
 
 # ============================================================
 # HTTP Handler
 # ============================================================
 
 class Handler(BaseHTTPRequestHandler):
+    server_version = "KeygenWeb/1.1"
+
+    # ---------- 响应辅助 ----------
+
     def _json(self, data, code=200):
-        body = json.dumps(data, ensure_ascii=False).encode('utf-8')
+        body = json.dumps(data, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
-        self.send_header('Content-Type', 'application/json; charset=utf-8')
-        self.send_header('Content-Length', str(len(body)))
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
 
     def _html(self, html, code=200):
-        body = html.encode('utf-8')
+        body = html.encode("utf-8")
         self.send_response(code)
-        self.send_header('Content-Type', 'text/html; charset=utf-8')
-        self.send_header('Content-Length', str(len(body)))
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
 
     def _body(self):
-        length = int(self.headers.get('Content-Length', 0))
+        """读取并解析 JSON body，失败返回空 dict。"""
+        length = int(self.headers.get("Content-Length", 0) or 0)
         if length == 0:
             return {}
         try:
             raw = self.rfile.read(length)
-            data = json.loads(raw.decode('utf-8'))
-            return data
-        except Exception as e:
-            print(f"[keygen_web] JSON解析失败: {e}")
+            return json.loads(raw.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            print(f"[keygen_web] JSON 解析失败: {e}")
             return {}
 
-    def _auth(self):
-        auth = self.headers.get('Authorization', '')
-        if not auth.startswith('Bearer '):
-            return False
-        return check_session(auth[7:])
+    def _auth_token(self):
+        auth = self.headers.get("Authorization", "")
+        if not auth.startswith("Bearer "):
+            return None
+        return auth[7:]
+
+    # ---------- GET ----------
 
     def do_GET(self):
         path = urlparse(self.path).path
-        if path in ('/', '/index.html'):
+        if path in ("/", "/index.html"):
             html_path = os.path.join(_BASE_DIR, "keygen_web.html")
-            if os.path.exists(html_path):
-                with open(html_path, 'r', encoding='utf-8') as f:
+            try:
+                with open(html_path, "r", encoding="utf-8") as f:
                     self._html(f.read())
-            else:
+            except FileNotFoundError:
                 self._html("<h1>keygen_web.html not found</h1>", 404)
         else:
             self.send_error(404)
 
+    # ---------- POST ----------
+
     def do_POST(self):
         path = urlparse(self.path).path
         body = self._body()
-        if path == '/api/login':
+
+        # 公开路由
+        if path in PUBLIC_ROUTES:
             self._json(api_login(body))
             return
-        if not self._auth():
+
+        # 鉴权
+        if not check_session(self._auth_token()):
             self._json({"ok": False, "error": "未登录或会话已过期"}, 401)
             return
-        routes = {
-            '/api/logout': lambda: (destroy_session(self.headers.get('Authorization', '')[7:]), {"ok": True})[1],
-            '/api/generate': lambda: api_generate(body),
-            '/api/batch': lambda: api_batch(body),
-            '/api/verify': lambda: api_verify(body),
-            '/api/history': lambda: api_history(body),
-            '/api/delete': lambda: api_delete(body),
-            '/api/clear': lambda: api_clear(body),
-            '/api/export': lambda: api_export(body),
-        }
-        handler = routes.get(path)
-        if handler:
-            self._json(handler())
-        else:
-            self._json({"ok": False, "error": "未知接口"}, 404)
 
-    def log_message(self, *a):
+        # 受保护路由
+        handler = PROTECTED_ROUTES.get(path)
+        if handler is None:
+            self._json({"ok": False, "error": "未知接口"}, 404)
+            return
+
+        try:
+            self._json(handler(body, self))
+        except Exception as e:
+            print(f"[keygen_web] 处理 {path} 异常: {e}")
+            self._json({"ok": False, "error": f"服务器内部错误: {e}"}, 500)
+
+    # ---------- 静默日志 ----------
+
+    def log_message(self, *args):
         pass
+
 
 # ============================================================
 # Main
@@ -293,17 +482,18 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     init_db()
     server = ThreadingHTTPServer((HOST, PORT), Handler)
-    print(f"\n  注册机 Web 管理台")
-    print(f"  =============================")
+    print("\n  注册机 Web 管理台")
+    print("  =============================")
     print(f"  访问地址: http://localhost:{PORT}")
     print(f"  管理密码: {ADMIN_PASSWORD}")
     print(f"  数据文件: {DB_PATH}")
-    print(f"  按 Ctrl+C 停止\n")
+    print("  按 Ctrl+C 停止\n")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print("\n已停止")
         server.shutdown()
+
 
 if __name__ == "__main__":
     main()

@@ -1,18 +1,26 @@
-version: "3.8"
-
+# docker compose v2+ 不再需要 version 字段
 services:
   keygen:
     build:
       context: .
       dockerfile: Dockerfile.keygen
+    image: hikvision-keygen:latest
     container_name: hikvision-keygen
     ports:
       - "5800:5800"
     environment:
       - KEYGEN_ADMIN_PASSWORD=${KEYGEN_ADMIN_PASSWORD:-hy8104905}
+      - KEYGEN_HOST=0.0.0.0
+      - KEYGEN_PORT=5800
     volumes:
       - keygen_data:/data/.hikvision_downloader
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:5800/', timeout=3).status==200 else 1)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   keygen_data:

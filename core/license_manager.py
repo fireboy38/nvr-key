@@ -82,6 +82,23 @@ LICENSE_DURATION = {
     LICENSE_TYPE_LIFETIME: None,  # 无限期
 }
 
+# 许可证类型中文展示名（模块级常量，避免在各函数内重复定义）
+LICENSE_TYPE_NAMES = {
+    LICENSE_TYPE_TRIAL: "试用版",
+    LICENSE_TYPE_STANDARD: "标准版",
+    LICENSE_TYPE_LIFETIME: "终身版",
+}
+
+# 带有效期描述的版本名（用于 CLI 输出）
+LICENSE_TYPE_NAMES_FULL = {
+    LICENSE_TYPE_TRIAL: "试用版（7天）",
+    LICENSE_TYPE_STANDARD: "标准版（1年）",
+    LICENSE_TYPE_LIFETIME: "终身版",
+}
+
+# 16 位十六进制字符集
+_HEX_CHARS = set("0123456789ABCDEF")
+
 
 # ============================================================
 # 硬件信息获取
@@ -392,7 +409,7 @@ def generate_key(machine_code, license_type=LICENSE_TYPE_STANDARD, expiry_date=N
     if len(clean_code) != 16:
         raise ValueError(f"机器码长度必须为16个字符，当前为 {len(clean_code)} 个字符")
 
-    if not all(c in "0123456789ABCDEF" for c in clean_code):
+    if not all(c in _HEX_CHARS for c in clean_code):
         raise ValueError("机器码必须为有效的十六进制字符")
 
     # 验证许可证类型
@@ -458,13 +475,13 @@ def validate_key(machine_code, key):
     """
     # 清理和验证机器码
     clean_code = machine_code.replace("-", "").upper()
-    if len(clean_code) != 16 or not all(c in "0123456789ABCDEF" for c in clean_code):
+    if len(clean_code) != 16 or not all(c in _HEX_CHARS for c in clean_code):
         return {"valid": False, "license_type": None, "expiry_date": None,
                 "error": "机器码格式无效"}
 
     # 清理和验证激活密钥
     clean_key = _unformat_key(key)
-    if len(clean_key) != 16 or not all(c in "0123456789ABCDEF" for c in clean_key):
+    if len(clean_key) != 16 or not all(c in _HEX_CHARS for c in clean_key):
         return {"valid": False, "license_type": None, "expiry_date": None,
                 "error": "激活密钥格式无效"}
 
@@ -834,6 +851,25 @@ def get_remaining_days():
 # 注册管理
 # ============================================================
 
+def _is_machine_code_expired(expiry_date):
+    """
+    检查过期日期是否已过期。
+
+    Args:
+        expiry_date (str|None): ISO 格式日期字符串，None 表示永不过期
+
+    Returns:
+        bool: True 表示已过期或日期格式无效
+    """
+    if not expiry_date:
+        return False
+    try:
+        expiry = datetime.date.fromisoformat(expiry_date)
+        return expiry < datetime.date.today()
+    except ValueError:
+        return True
+
+
 def is_registered():
     """
     检查当前设备是否已有效注册
@@ -844,6 +880,8 @@ def is_registered():
     3. 验证激活密钥是否有效
     4. 验证许可证是否未过期
 
+    注：get_machine_code() 内部已带缓存，重复调用不会触发硬件查询。
+
     Returns:
         bool: 是否已有效注册
     """
@@ -851,66 +889,33 @@ def is_registered():
     if not license_data:
         return False
 
-    # 验证机器码
     current_machine_code = get_machine_code()
     stored_machine_code = license_data.get("machine_code", "").replace("-", "").upper()
     if current_machine_code != stored_machine_code:
         return False
 
-    # 快速验证激活密钥
-    activation_key = license_data.get("activation_key", "")
-    license_type = license_data.get("license_type", "")
-    expiry_date = license_data.get("expiry_date")
-
-    if not _validate_key_fast(current_machine_code, activation_key, license_type, expiry_date):
+    if not _validate_key_fast(
+        current_machine_code,
+        license_data.get("activation_key", ""),
+        license_data.get("license_type", ""),
+        license_data.get("expiry_date"),
+    ):
         return False
 
-    # 验证过期日期
-    if expiry_date:
-        try:
-            expiry = datetime.date.fromisoformat(expiry_date)
-            if expiry < datetime.date.today():
-                return False
-        except Exception:
-            return False
-
-    return True
+    return not _is_machine_code_expired(license_data.get("expiry_date"))
 
 
 def is_registered_quick():
     """
-    快速检查是否已注册（使用缓存的机器码，不重复调用get_machine_code）
+    快速检查是否已注册（向后兼容别名）。
 
-    适用于在已获取过机器码的上下文中调用，避免重复的硬件查询。
+    get_machine_code() 现已内置缓存，与 is_registered() 行为完全等价。
+    保留此函数仅为兼容旧调用方。
 
     Returns:
         bool: 是否已有效注册
     """
-    license_data = _load_license_data()
-    if not license_data:
-        return False
-
-    current_machine_code = get_machine_code()  # 使用缓存
-    stored_machine_code = license_data.get("machine_code", "").replace("-", "").upper()
-    if current_machine_code != stored_machine_code:
-        return False
-
-    activation_key = license_data.get("activation_key", "")
-    license_type = license_data.get("license_type", "")
-    expiry_date = license_data.get("expiry_date")
-
-    if not _validate_key_fast(current_machine_code, activation_key, license_type, expiry_date):
-        return False
-
-    if expiry_date:
-        try:
-            expiry = datetime.date.fromisoformat(expiry_date)
-            if expiry < datetime.date.today():
-                return False
-        except Exception:
-            return False
-
-    return True
+    return is_registered()
 
 
 def register(machine_code, key):
@@ -963,12 +968,7 @@ def register(machine_code, key):
             "expiry_date": None,
         }
 
-    type_names = {
-        LICENSE_TYPE_TRIAL: "试用版",
-        LICENSE_TYPE_STANDARD: "标准版",
-        LICENSE_TYPE_LIFETIME: "终身版",
-    }
-    type_name = type_names.get(result["license_type"], result["license_type"])
+    type_name = LICENSE_TYPE_NAMES.get(result["license_type"], result["license_type"])
 
     return {
         "success": True,
@@ -1141,12 +1141,7 @@ def main():
         print(f"机器码: {info['machine_code']}")
 
         if info["registered"]:
-            type_names = {
-                LICENSE_TYPE_TRIAL: "试用版",
-                LICENSE_TYPE_STANDARD: "标准版",
-                LICENSE_TYPE_LIFETIME: "终身版",
-            }
-            type_name = type_names.get(info["license_type"], info["license_type"])
+            type_name = LICENSE_TYPE_NAMES.get(info["license_type"], info["license_type"])
             print(f"状态: 已注册")
             print(f"许可证类型: {type_name}")
             print(f"注册日期: {info['registered_date']}")
@@ -1181,12 +1176,7 @@ def main():
             print("=" * 50)
             print(f"机器码: {result['machine_code']}")
             print(f"激活密钥: {result['activation_key']}")
-            type_names = {
-                LICENSE_TYPE_TRIAL: "试用版（7天）",
-                LICENSE_TYPE_STANDARD: "标准版（1年）",
-                LICENSE_TYPE_LIFETIME: "终身版",
-            }
-            print(f"许可证类型: {type_names.get(result['license_type'], result['license_type'])}")
+            print(f"许可证类型: {LICENSE_TYPE_NAMES_FULL.get(result['license_type'], result['license_type'])}")
             print(f"过期日期: {result['expiry_date'] or '永不过期'}")
             print("=" * 50)
             print()

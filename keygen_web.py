@@ -10,7 +10,8 @@
     http://localhost:5800
 
 环境变量:
-    KEYGEN_ADMIN_PASSWORD  管理密码（默认 hy8104905）
+    KEYGEN_ADMIN_USERNAME  管理用户名（默认 admin）
+    KEYGEN_ADMIN_PASSWORD  管理密码（默认 admin123）
     KEYGEN_PORT            监听端口（默认 5800）
     KEYGEN_HOST            监听地址（默认 0.0.0.0）
 """
@@ -33,7 +34,8 @@ from urllib.parse import urlparse
 
 HOST = os.environ.get("KEYGEN_HOST", "0.0.0.0")
 PORT = int(os.environ.get("KEYGEN_PORT", "5800"))
-ADMIN_PASSWORD = os.environ.get("KEYGEN_ADMIN_PASSWORD", "hy8104905")
+ADMIN_USERNAME = os.environ.get("KEYGEN_ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.environ.get("KEYGEN_ADMIN_PASSWORD", "admin123")
 SESSION_TTL = 7200  # 秒，2 小时
 
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".hikvision_downloader")
@@ -182,13 +184,14 @@ def _sanitize_int(value, default, minimum=1, maximum=1000):
 # ============================================================
 
 def api_login(body):
+    input_user = body.get("username", "")
     input_pwd = body.get("password", "")
-    if input_pwd == ADMIN_PASSWORD:
+    if input_user == ADMIN_USERNAME and input_pwd == ADMIN_PASSWORD:
         token = create_session()
-        print(f"[keygen_web] 登录成功 (token={token[:8]}...)")
-        return {"ok": True, "token": token}
-    print(f"[keygen_web] 登录失败: 输入密码长度={len(input_pwd)}")
-    return {"ok": False, "error": "密码错误"}
+        print(f"[keygen_web] 登录成功 user={input_user} (token={token[:8]}...)")
+        return {"ok": True, "token": token, "username": input_user}
+    print(f"[keygen_web] 登录失败: user={input_user} password_len={len(input_pwd)}")
+    return {"ok": False, "error": "用户名或密码错误"}
 
 
 def api_generate(body):
@@ -485,7 +488,7 @@ def main():
     print("\n  注册机 Web 管理台")
     print("  =============================")
     print(f"  访问地址: http://localhost:{PORT}")
-    print(f"  管理密码: {ADMIN_PASSWORD}")
+    print(f"  登录凭据: {ADMIN_USERNAME} / {ADMIN_PASSWORD}")
     print(f"  数据文件: {DB_PATH}")
     print("  按 Ctrl+C 停止\n")
     try:

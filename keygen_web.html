@@ -3,1648 +3,1131 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#0b0e1f">
+  <meta name="theme-color" content="#0a0d1a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>注册机 · Web 管理台</title>
+  <title>管理控制台 · License Manager</title>
   <style>
-    /* ============== 设计变量 - 深色玻璃拟态主题 ============== */
+    /* ============== Design Tokens — Dark Glass Morphism ============== */
     :root {
-      /* 主色 - 紫蓝渐变系 */
-      --brand-1: #6366f1;       /* indigo-500 */
-      --brand-2: #8b5cf6;       /* violet-500 */
-      --brand-3: #ec4899;       /* pink-500 */
-      --accent: #06b6d4;        /* cyan-500 */
+      --brand-1: #6366f1;
+      --brand-2: #8b5cf6;
+      --brand-3: #ec4899;
+      --accent: #06b6d4;
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
 
-      /* 深色背景层级 */
-      --bg-base: #0b0e1f;        /* 最底层 */
-      --bg-elevated: #131734;    /* 卡片底色 */
-      --bg-overlay: #1c2148;     /* 悬浮层 */
-      --bg-hover: #252b5c;       /* 悬停态 */
+      --bg-root: #0a0d1a;
+      --bg-sidebar: #0f1328;
+      --bg-card: rgba(19, 23, 52, 0.7);
+      --bg-elevated: #1c2148;
+      --bg-hover: rgba(37, 43, 92, 0.6);
+      --bg-input: rgba(15, 22, 45, 0.7);
+      --bg-toast: #1c2148;
 
-      /* 文字层级 */
       --text-primary: #f1f5f9;
       --text-secondary: #cbd5e1;
       --text-muted: #64748b;
       --text-dim: #475569;
 
-      /* 边框 */
-      --border: rgba(255, 255, 255, 0.08);
-      --border-strong: rgba(255, 255, 255, 0.16);
-      --border-brand: rgba(139, 92, 246, 0.4);
+      --border: rgba(255,255,255,0.07);
+      --border-strong: rgba(255,255,255,0.14);
+      --border-brand: rgba(139,92,246,0.35);
 
-      /* 阴影 */
-      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
-      --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
-      --shadow-glow: 0 0 32px rgba(139, 92, 246, 0.35);
+      --radius-sm: 8px;
+      --radius: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
 
-      /* 渐变 */
-      --grad-brand: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
-      --grad-dark: linear-gradient(135deg, #0b0e1f 0%, #1c2148 100%);
-      --grad-card: linear-gradient(145deg, rgba(28, 33, 72, 0.6) 0%, rgba(19, 23, 52, 0.8) 100%);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+      --shadow-card: 0 8px 32px rgba(0,0,0,0.35), 0 0 1px var(--border-brand);
+      --shadow-glow: 0 0 40px rgba(139,92,246,0.25);
+      --shadow-toast: 0 12px 40px rgba(0,0,0,0.5);
 
-      /* 圆角 */
-      --r-sm: 6px;
-      --r-md: 10px;
-      --r-lg: 16px;
-      --r-xl: 24px;
+      --grad-brand: linear-gradient(135deg, #6366f1 0%, #8b5cf6 45%, #ec4899 100%);
+      --grad-sidebar: linear-gradient(180deg, #0f1328 0%, #0a0d1a 100%);
+      --grad-card-hover: linear-gradient(145deg, rgba(28,33,72,0.6) 0%, rgba(19,23,52,0.8) 100%);
 
-      /* 字体 */
-      --font-sans: "Inter", "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
-      --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+      --font-mono: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+      --sidebar-w: 240px;
+      --topbar-h: 56px;
+      --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
     }
 
-    /* ============== 基础重置 ============== */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    html, body { height: 100%; }
+    * { margin:0; padding:0; box-sizing:border-box; }
 
     body {
       font-family: var(--font-sans);
-      background: var(--bg-base);
+      background: var(--bg-root);
       color: var(--text-primary);
-      font-size: 14px;
-      line-height: 1.5;
+      min-height: 100vh;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      -webkit-tap-highlight-color: transparent;
-      -webkit-text-size-adjust: 100%;
-      text-size-adjust: 100%;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
 
-    /* iOS 输入框去默认样式 */
-    input, textarea, select, button {
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-      border-radius: 0;
-    }
-    input[type="date"] { min-height: 44px; }
-
-    /* 背景装饰 - 流动的光晕 */
-    body::before {
-      content: "";
+    /* Background glow orbs */
+    body::before, body::after {
+      content: '';
       position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(99, 102, 241, 0.18), transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 30%, rgba(236, 72, 153, 0.12), transparent 60%),
-        radial-gradient(ellipse 70% 60% at 50% 90%, rgba(6, 182, 212, 0.10), transparent 60%);
+      border-radius: 50%;
+      filter: blur(120px);
       pointer-events: none;
       z-index: 0;
-      animation: bgShift 20s ease-in-out infinite alternate;
+    }
+    body::before {
+      width: 600px; height: 600px;
+      background: rgba(99,102,241,0.08);
+      top: -200px; right: -200px;
+    }
+    body::after {
+      width: 400px; height: 400px;
+      background: rgba(139,92,246,0.06);
+      bottom: -100px; left: -100px;
     }
 
-    @keyframes bgShift {
-      0%   { transform: translate(0, 0) scale(1); }
-      50%  { transform: translate(-2%, 2%) scale(1.05); }
-      100% { transform: translate(2%, -2%) scale(1); }
-    }
+    /* ============== Scrollbar ============== */
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--text-dim); border-radius:3px; }
+    ::-webkit-scrollbar-thumb:hover { background:var(--text-muted); }
 
-    /* ============== 滚动条美化 ============== */
-    ::-webkit-scrollbar { width: 10px; height: 10px; }
-    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-    ::-webkit-scrollbar-thumb {
-      background: linear-gradient(180deg, var(--brand-1), var(--brand-2));
-      border-radius: 5px;
-      border: 2px solid var(--bg-base);
-    }
-    ::-webkit-scrollbar-thumb:hover { background: var(--brand-2); }
-
-    /* ============== 登录页 ============== */
-    .login-wrap {
-      position: relative;
-      z-index: 1;
+    /* ============== LOGIN PAGE ============== */
+    #login-page {
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      min-height: 100dvh;  /* iOS 16+ 动态视口高度 */
       padding: 20px;
-      padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)) 20px;
+      position: relative;
+      z-index: 1;
     }
+    #login-page.hidden { display:none; }
 
     .login-card {
-      position: relative;
-      width: 100%;
-      max-width: 420px;
-      padding: 48px 40px 40px;
-      background: var(--grad-card);
+      background: var(--bg-card);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
-      border: 1px solid var(--border-strong);
-      border-radius: var(--r-xl);
-      box-shadow: var(--shadow-lg), var(--shadow-glow);
-      animation: cardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 48px 40px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow-card);
+      text-align: center;
+      animation: fadeUp 0.5s ease;
     }
-
-    @keyframes cardIn {
-      from { opacity: 0; transform: translateY(20px) scale(0.96); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    /* 卡片顶部光晕装饰 */
-    .login-card::before {
-      content: "";
-      position: absolute;
-      top: -1px; left: -1px; right: -1px;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--brand-2), transparent);
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(20px); }
+      to { opacity:1; transform:translateY(0); }
     }
 
     .login-logo {
-      width: 72px;
-      height: 72px;
-      margin: 0 auto 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 56px; height: 56px;
+      margin: 0 auto 20px;
+      border-radius: 16px;
       background: var(--grad-brand);
-      border-radius: 18px;
-      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
-      animation: pulse 3s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4), inset 0 1px 0 rgba(255,255,255,0.2); }
-      50% { box-shadow: 0 8px 36px rgba(139, 92, 246, 0.7), inset 0 1px 0 rgba(255,255,255,0.3); }
-    }
-
-    .login-logo svg { width: 36px; height: 36px; color: #fff; }
-
-    .login-card h1 {
+      display: flex; align-items:center; justify-content:center;
       font-size: 24px;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 8px;
+      box-shadow: var(--shadow-glow);
+    }
+    .login-card h1 {
+      font-size: 22px; font-weight: 700;
+      margin-bottom: 6px;
       background: var(--grad-brand);
-      -webkit-background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
-      -webkit-text-fill-color: transparent;
-      letter-spacing: 0.5px;
     }
-
     .login-card p {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 13px;
+      font-size: 13px; color: var(--text-muted);
       margin-bottom: 32px;
-      letter-spacing: 0.3px;
     }
 
-    .login-card input {
-      width: 100%;
-      padding: 14px 18px;
-      background: rgba(0, 0, 0, 0.25);
-      border: 1px solid var(--border);
-      border-radius: var(--r-md);
-      color: var(--text-primary);
-      font-size: 15px;
-      font-family: inherit;
-      outline: none;
-      transition: all 0.2s ease;
-      margin-bottom: 20px;
-    }
-
-    .login-card input::placeholder { color: var(--text-dim); }
-
-    .login-card input:focus {
-      border-color: var(--brand-2);
-      background: rgba(0, 0, 0, 0.4);
-      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
-    }
-
-    .login-card button {
-      width: 100%;
-      padding: 14px;
-      background: var(--grad-brand);
-      color: #fff;
-      border: none;
-      border-radius: var(--r-md);
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      letter-spacing: 1px;
-      transition: all 0.25s ease;
-      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .login-card button::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
-      transform: translateX(-100%);
-      transition: transform 0.6s ease;
-    }
-
-    .login-card button:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5);
-    }
-
-    .login-card button:hover:not(:disabled)::before { transform: translateX(100%); }
-
-    .login-card button:disabled { opacity: 0.6; cursor: not-allowed; }
-
-    .login-err {
-      color: var(--danger);
-      font-size: 13px;
-      text-align: center;
-      margin-top: 16px;
-      padding: 8px 12px;
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      border-radius: var(--r-sm);
-      display: none;
-    }
-
-    .login-err:not(:empty) { display: block; animation: shake 0.4s; }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-6px); }
-      75% { transform: translateX(6px); }
-    }
-
-    /* ============== 主应用 ============== */
-    .app {
-      position: relative;
-      z-index: 1;
-      min-height: 100vh;
-      display: none;
-    }
-
-    .app[style*="block"] { animation: fadeIn 0.4s ease; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ============== Header ============== */
-    .header {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: rgba(11, 14, 31, 0.75);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .header-logo {
-      width: 36px;
-      height: 36px;
-      background: var(--grad-brand);
-      border-radius: 9px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
-    }
-    .header-logo svg { width: 20px; height: 20px; color: #fff; }
-
-    .header h1 {
-      font-size: 17px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      color: var(--text-primary);
-    }
-
-    .header .info {
-      font-size: 12px;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .header .info span {
-      color: var(--text-secondary);
-      font-family: var(--font-mono);
-      padding: 4px 10px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: var(--r-sm);
-      border: 1px solid var(--border);
-    }
-
-    .header button {
-      background: rgba(239, 68, 68, 0.1);
-      color: var(--danger);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-      padding: 6px 14px;
-      border-radius: var(--r-sm);
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 500;
-      transition: all 0.2s ease;
-    }
-
-    .header button:hover {
-      background: rgba(239, 68, 68, 0.2);
-      border-color: rgba(239, 68, 68, 0.4);
-    }
-
-    /* ============== 标签栏 ============== */
-    .tabs {
-      display: flex;
-      background: rgba(19, 23, 52, 0.5);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      padding: 0 32px;
-      gap: 4px;
-    }
-
-    .tab {
-      padding: 16px 24px;
-      cursor: pointer;
-      font-weight: 500;
-      font-size: 14px;
-      color: var(--text-muted);
-      border-bottom: 2px solid transparent;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      position: relative;
-    }
-
-    .tab svg { width: 16px; height: 16px; }
-
-    .tab:hover { color: var(--text-secondary); }
-
-    .tab.active {
-      color: #fff;
-      border-bottom-color: var(--brand-2);
-    }
-
-    .tab.active::after {
-      content: "";
-      position: absolute;
-      bottom: -1px; left: 50%;
-      transform: translateX(-50%);
-      width: 60%;
-      height: 1px;
-      background: var(--grad-brand);
-      box-shadow: 0 0 8px var(--brand-2);
-    }
-
-    /* ============== 主体内容 ============== */
-    .content {
-      max-width: 1000px;
-      margin: 32px auto;
-      padding: 0 24px;
-    }
-
-    .panel { display: none; }
-    .panel.active { display: block; animation: fadeIn 0.35s ease; }
-
-    .card {
-      background: var(--grad-card);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: var(--r-lg);
-      padding: 28px;
-      margin-bottom: 20px;
-      box-shadow: var(--shadow-md);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .card:hover { border-color: var(--border-strong); }
-
-    .card h2 {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .card h2::before {
-      content: "";
-      width: 4px;
-      height: 18px;
-      background: var(--grad-brand);
-      border-radius: 2px;
-      box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
-    }
-
-    /* ============== 表单 ============== */
-    .fg { margin-bottom: 18px; }
-
-    .fg label {
-      display: block;
-      font-weight: 500;
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
-      letter-spacing: 0.2px;
-    }
-
-    .fg input,
-    .fg select,
-    .fg textarea {
-      width: 100%;
-      padding: 12px 16px;
-      background: rgba(0, 0, 0, 0.25);
-      border: 1px solid var(--border);
-      border-radius: var(--r-md);
-      color: var(--text-primary);
-      font-size: 14px;
-      font-family: inherit;
-      outline: none;
-      transition: all 0.2s ease;
-    }
-
-    .fg input::placeholder,
-    .fg textarea::placeholder { color: var(--text-dim); }
-
-    .fg input:focus,
-    .fg select:focus,
-    .fg textarea:focus {
-      border-color: var(--brand-2);
-      background: rgba(0, 0, 0, 0.4);
-      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.12);
-    }
-
-    .fg input[type="date"]::-webkit-calendar-picker-indicator {
-      filter: invert(1);
-      opacity: 0.6;
-      cursor: pointer;
-    }
-
-    .fg textarea {
-      min-height: 130px;
-      resize: vertical;
-      font-family: var(--font-mono);
-      line-height: 1.6;
-    }
-
-    .fg select {
-      appearance: none;
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cbd5e1' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      background-size: 18px;
-      padding-right: 40px;
-    }
-
-    .fg select option { background: var(--bg-elevated); color: var(--text-primary); }
-
-    .fg .hint {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 6px;
-      letter-spacing: 0.2px;
-    }
-
-    .fr { display: flex; gap: 16px; }
-    .fr .fg { flex: 1; }
-
-    /* ============== 授权类型卡片 ============== */
-    .lc {
-      display: flex;
-      gap: 14px;
+    .form-group {
+      text-align: left;
       margin-bottom: 18px;
     }
-
-    .lc-card {
-      flex: 1;
-      padding: 20px 16px;
-      text-align: center;
-      cursor: pointer;
-      background: rgba(0, 0, 0, 0.2);
-      border: 1.5px solid var(--border);
-      border-radius: var(--r-md);
-      transition: all 0.25s ease;
-      position: relative;
-      overflow: hidden;
+    .form-group label {
+      display: block;
+      font-size: 12px; font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
-
-    .lc-card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: var(--grad-brand);
-      opacity: 0;
-      transition: opacity 0.25s ease;
-      pointer-events: none;
-    }
-
-    .lc-card:hover {
-      border-color: var(--border-strong);
-      transform: translateY(-2px);
-    }
-
-    .lc-card.sel {
-      border-color: var(--brand-2);
-      background: rgba(139, 92, 246, 0.08);
-      box-shadow: 0 0 0 1px var(--brand-2), 0 8px 24px rgba(139, 92, 246, 0.2);
-    }
-
-    .lc-card .nm {
-      font-weight: 600;
-      font-size: 15px;
+    .form-group input {
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
       color: var(--text-primary);
-      margin-bottom: 4px;
+      font-size: 15px;
+      font-family: var(--font-sans);
+      transition: all var(--transition);
+      outline: none;
+    }
+    .form-group input:focus {
+      border-color: var(--brand-2);
+      box-shadow: 0 0 0 3px rgba(139,92,246,0.15);
+    }
+    .form-group input::placeholder { color: var(--text-dim); }
+
+    .login-error {
+      color: var(--danger);
+      font-size: 13px;
+      margin-bottom: 12px;
+      min-height: 20px;
     }
 
-    .lc-card .ds {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .lc-card.sel .nm { color: #c4b5fd; }
-
-    /* ============== 按钮 ============== */
     .btn {
-      padding: 11px 22px;
-      border: none;
-      border-radius: var(--r-md);
-      font-size: 14px;
-      font-weight: 600;
+      display: inline-flex; align-items:center; justify-content:center;
+      gap: 8px; padding: 12px 24px;
+      font-size: 14px; font-weight: 600;
+      font-family: var(--font-sans);
+      border: none; border-radius: var(--radius-sm);
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-      font-family: inherit;
-      letter-spacing: 0.3px;
+      transition: all var(--transition);
+      outline: none;
     }
-
-    .btn svg { width: 16px; height: 16px; }
-
-    /* 主按钮 - 紫蓝渐变 */
-    .btn-p {
+    .btn:disabled { opacity:0.5; cursor:not-allowed; }
+    .btn-primary {
+      width: 100%; padding: 14px;
       background: var(--grad-brand);
       color: #fff;
-      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+      font-size: 15px;
+      box-shadow: 0 4px 16px rgba(139,92,246,0.3);
     }
-    .btn-p:hover {
+    .btn-primary:hover:not(:disabled) {
+      box-shadow: 0 6px 24px rgba(139,92,246,0.5);
       transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5);
     }
-    .btn-p:active { transform: translateY(0); }
-
-    /* 次按钮 - 玻璃态 */
-    .btn-s {
-      background: rgba(255, 255, 255, 0.06);
+    .btn-ghost {
+      background: transparent;
       color: var(--text-secondary);
       border: 1px solid var(--border);
-      backdrop-filter: blur(8px);
     }
-    .btn-s:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: var(--text-primary);
-      border-color: var(--border-strong);
+    .btn-ghost:hover { background:var(--bg-hover); color:var(--text-primary); }
+    .btn-sm { padding:6px 12px; font-size:12px; border-radius:6px; }
+    .btn-danger { background:var(--danger); color:#fff; }
+    .btn-danger:hover { filter:brightness(1.2); }
+    .btn-accent { background:var(--accent); color:#fff; font-size:13px; padding:10px 20px; border-radius:8px; }
+    .btn-accent:hover { filter:brightness(1.15); }
+
+    /* ============== MAIN LAYOUT ============== */
+    #main-layout { display:none; position:relative; z-index:1; }
+    #main-layout.active { display:flex; min-height:100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      background: var(--grad-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top:0; left:0; bottom:0;
+      z-index: 100;
+      transition: transform var(--transition);
     }
 
-    /* 危险按钮 */
-    .btn-d {
-      background: rgba(239, 68, 68, 0.1);
-      color: var(--danger);
-      border: 1px solid rgba(239, 68, 68, 0.3);
+    .sidebar-header {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid var(--border);
     }
-    .btn-d:hover {
-      background: rgba(239, 68, 68, 0.2);
-      border-color: rgba(239, 68, 68, 0.5);
+    .sidebar-logo {
+      display: flex; align-items:center; gap:10px;
     }
-
-    /* 验证按钮 - 青色 */
-    .btn-g {
-      background: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
-      color: #fff;
-      box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
-    }
-    .btn-g:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(6, 182, 212, 0.5);
-    }
-
-    .btn-sm { padding: 7px 14px; font-size: 13px; }
-
-    /* ============== 生成结果区 ============== */
-    .rb {
-      margin-top: 20px;
-      padding: 28px;
-      background: linear-gradient(145deg, rgba(139, 92, 246, 0.12), rgba(99, 102, 241, 0.06));
-      border: 1px solid var(--border-brand);
-      border-radius: var(--r-lg);
-      text-align: center;
-      display: none;
-      backdrop-filter: blur(12px);
-      animation: fadeIn 0.4s ease;
-    }
-
-    .rb .st {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--success);
-      letter-spacing: 1px;
-    }
-
-    .rb .key {
-      font-size: 32px;
-      font-weight: 700;
-      color: #fff;
-      font-family: var(--font-mono);
-      letter-spacing: 6px;
-      margin: 14px 0;
-      text-shadow: 0 0 24px rgba(139, 92, 246, 0.6);
+    .sidebar-logo .icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
       background: var(--grad-brand);
-      -webkit-background-clip: text;
+      display: flex; align-items:center; justify-content:center;
+      font-size: 16px;
+    }
+    .sidebar-logo h2 {
+      font-size: 15px; font-weight: 700;
+      background: var(--grad-brand);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
-      -webkit-text-fill-color: transparent;
     }
 
-    .rb .inf {
-      font-size: 13px;
+    .sidebar-nav {
+      flex:1; overflow-y:auto;
+      padding: 12px 10px;
+    }
+    .nav-section {
+      margin-bottom: 6px;
+    }
+    .nav-section-title {
+      font-size: 10px; font-weight:700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 8px 12px 6px;
+    }
+    .nav-item {
+      display: flex; align-items:center; gap:10px;
+      padding: 10px 12px;
+      margin: 2px 0;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition);
+      font-size: 13px; font-weight: 500;
       color: var(--text-muted);
-      letter-spacing: 0.3px;
+      border: none; background: none; width: 100%;
+      text-align: left;
+      font-family: var(--font-sans);
+    }
+    .nav-item:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    .nav-item.active {
+      background: rgba(139,92,246,0.15);
+      color: var(--brand-2);
+      font-weight: 600;
+    }
+    .nav-item .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      transition: all var(--transition);
+    }
+    .nav-item.active .dot {
+      background: var(--brand-2);
+      box-shadow: 0 0 8px rgba(139,92,246,0.5);
+    }
+    .nav-item .badge {
+      margin-left: auto;
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: rgba(139,92,246,0.2);
+      color: var(--brand-2);
     }
 
-    .rb.err {
-      background: linear-gradient(145deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.04));
-      border-color: rgba(239, 68, 68, 0.4);
+    .sidebar-footer {
+      padding: 12px 10px;
+      border-top: 1px solid var(--border);
     }
-    .rb.err .st { color: var(--danger); }
-    .rb.err .key {
-      -webkit-text-fill-color: var(--danger);
-      text-shadow: 0 0 24px rgba(239, 68, 68, 0.4);
+    .sidebar-footer .user-info {
+      display: flex; align-items:center; gap:8px;
+      padding: 8px 12px;
+      font-size: 12px; color: var(--text-secondary);
+    }
+    .sidebar-footer .logout-btn {
+      display: flex; align-items:center; gap:6px;
+      padding: 8px 12px; width: 100%;
+      border: none; background: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 12px; color: var(--text-muted);
+      font-family: var(--font-sans);
+      transition: all var(--transition);
+    }
+    .sidebar-footer .logout-btn:hover {
+      background: rgba(239,68,68,0.1);
+      color: var(--danger);
+    }
+
+    /* Content */
+    .main-content {
+      flex:1;
+      margin-left: var(--sidebar-w);
+      padding: 28px 32px 40px;
+      min-width: 0;
+    }
+
+    /* Top bar */
+    .topbar {
+      display: flex; align-items:center; justify-content:space-between;
+      margin-bottom: 28px;
+      flex-wrap:wrap; gap:12px;
+    }
+    .topbar .page-title {
+      font-size: 24px; font-weight: 700;
+    }
+    .topbar .breadcrumb {
+      font-size: 12px; color: var(--text-muted);
+    }
+    .topbar .breadcrumb span { color: var(--text-secondary); }
+
+    /* Module loading */
+    .module-panel { display:none; animation: fadeUp 0.3s ease; }
+    .module-panel.active { display:block; }
+
+    /* ============== Dashboard / Cards ============== */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      transition: all var(--transition);
+    }
+    .stat-card:hover {
+      border-color: var(--border-brand);
+      background: var(--grad-card-hover);
+    }
+    .stat-card .card-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items:center; justify-content:center;
       font-size: 18px;
-      letter-spacing: 0;
+      margin-bottom: 12px;
+    }
+    .stat-card .card-value {
+      font-size: 28px; font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .stat-card .card-label {
+      font-size: 12px; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing:0.5px;
     }
 
-    /* ============== 表格 ============== */
+    /* ============== Sub-tabs ============== */
+    .sub-tabs {
+      display: flex; gap:4px;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 4px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+    }
+    .sub-tab {
+      flex:1; min-width:0;
+      padding: 10px 16px;
+      border: none; background: none;
+      border-radius: calc(var(--radius-lg) - 4px);
+      font-size: 13px; font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+    .sub-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .sub-tab.active {
+      background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15));
+      color: var(--text-primary);
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .sub-panel { display:none; animation:fadeUp 0.25s ease; }
+    .sub-panel.active { display:block; }
+
+    /* ============== Panel Cards ============== */
+    .panel-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+    }
+    .panel-card h3 {
+      font-size: 16px; font-weight: 700;
+      margin-bottom: 20px;
+      display: flex; align-items:center; gap:8px;
+    }
+    .panel-card textarea, .panel-card input[type="text"] {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      outline: none;
+      transition: all var(--transition);
+      resize: vertical;
+    }
+    .panel-card textarea:focus, .panel-card input[type="text"]:focus {
+      border-color: var(--brand-2);
+      box-shadow: 0 0 0 3px rgba(139,92,246,0.12);
+    }
+    .panel-card textarea { min-height:100px; }
+    .panel-card select {
+      padding: 10px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      outline: none;
+    }
+    .form-row {
+      display: flex; gap:12px; align-items:flex-end;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .form-row .form-group { flex:1; min-width:140px; }
+
+    /* Result area */
+    .result-box {
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      max-height: 300px; overflow-y: auto;
+    }
+
+    /* Table */
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 12px;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
     }
-
-    thead { background: rgba(0, 0, 0, 0.2); }
-
+    th, td {
+      padding: 10px 12px; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
     th {
-      padding: 12px 14px;
-      text-align: left;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
+      font-size: 11px; font-weight: 700;
+      color: var(--text-muted); text-transform: uppercase;
       letter-spacing: 0.5px;
-      text-transform: uppercase;
-      border-bottom: 1px solid var(--border);
+      background: rgba(15,22,45,0.5);
+      position: sticky; top:0; z-index:1;
     }
-
-    th:first-child { border-top-left-radius: var(--r-md); }
-    th:last-child  { border-top-right-radius: var(--r-md); }
-
-    td {
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--border);
-      color: var(--text-secondary);
-    }
-
-    tr:hover td {
-      background: rgba(139, 92, 246, 0.04);
-      color: var(--text-primary);
-    }
-
-    tr:last-child td { border-bottom: none; }
-
-    .mono {
+    td { color: var(--text-secondary); }
+    tr:hover td { background: rgba(139,92,246,0.04); }
+    .code {
       font-family: var(--font-mono);
-      color: var(--text-primary);
-      font-size: 12.5px;
+      color: var(--accent);
+      font-size: 12px;
     }
 
-    /* ============== 标签徽章 ============== */
-    .tag {
-      display: inline-block;
-      padding: 3px 12px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
+    /* Pagination */
+    .pagination {
+      display: flex; align-items:center; justify-content:center;
+      gap: 8px; margin-top: 16px;
     }
-
-    .tag-trial {
-      background: rgba(245, 158, 11, 0.15);
-      color: var(--warning);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-    }
-    .tag-standard {
-      background: rgba(139, 92, 246, 0.15);
-      color: #c4b5fd;
-      border: 1px solid rgba(139, 92, 246, 0.3);
-    }
-    .tag-lifetime {
-      background: rgba(16, 185, 129, 0.15);
-      color: #6ee7b7;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-
-    /* ============== 分页 ============== */
-    .pager {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 20px;
-      padding-top: 16px;
-      border-top: 1px solid var(--border);
-    }
-
-    .pager .inf { font-size: 13px; color: var(--text-muted); }
-
-    /* ============== 工具栏 ============== */
-    .ab {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 18px;
-      align-items: center;
-    }
-    .ab .sp { flex: 1; }
-
-    /* ============== 验证结果 ============== */
-    .vr {
-      margin-top: 18px;
-      padding: 22px;
-      border-radius: var(--r-lg);
-      text-align: center;
-      display: none;
-      animation: fadeIn 0.4s ease;
-      backdrop-filter: blur(12px);
-    }
-
-    .vr.ok {
-      background: linear-gradient(145deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
-      border: 1px solid rgba(16, 185, 129, 0.4);
-    }
-    .vr.fail {
-      background: linear-gradient(145deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
-      border: 1px solid rgba(239, 68, 68, 0.4);
-    }
-
-    .vr .st {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    .vr .st svg { width: 24px; height: 24px; }
-    .vr.ok .st { color: var(--success); }
-    .vr.fail .st { color: var(--danger); }
-
-    .vr .dt {
-      font-size: 13px;
+    .pagination button {
+      padding: 6px 12px;
+      background: var(--bg-hover);
+      border: 1px solid var(--border);
+      border-radius: 6px;
       color: var(--text-secondary);
-      margin-top: 10px;
-      letter-spacing: 0.3px;
+      cursor: pointer;
+      font-size: 12px; font-family: var(--font-sans);
+    }
+    .pagination button:hover { background:rgba(139,92,246,0.15); color:var(--text-primary); }
+    .pagination button:disabled { opacity:0.3; }
+    .pagination span { font-size:12px; color:var(--text-muted); }
+
+    /* Labels / badges */
+    .label { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+    .label-trial { background:rgba(245,158,11,0.15); color:var(--warning); }
+    .label-standard { background:rgba(6,182,212,0.15); color:var(--accent); }
+    .label-lifetime { background:rgba(16,185,129,0.15); color:var(--success); }
+
+    /* Toast */
+    .toast-container {
+      position: fixed; top:20px; right:20px; z-index:9999;
+      display:flex; flex-direction:column; gap:8px;
+    }
+    .toast {
+      padding: 12px 20px;
+      background: var(--bg-toast);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-toast);
+      animation: slideIn 0.3s ease;
+      max-width: 360px;
+    }
+    .toast.success { border-left: 3px solid var(--success); }
+    .toast.error { border-left: 3px solid var(--danger); }
+    @keyframes slideIn {
+      from { opacity:0; transform:translateX(40px); }
+      to { opacity:1; transform:translateX(0); }
     }
 
-    /* ============== 空状态 ============== */
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--text-muted);
+    /* Mobile hamburger */
+    .mobile-toggle {
+      display:none;
+      position:fixed; top:12px; left:12px; z-index:200;
+      width:40px; height:40px;
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:10px;
+      color:var(--text-primary);
+      font-size:20px;
+      cursor:pointer;
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
     }
-    .empty-state svg { width: 48px; height: 48px; opacity: 0.4; margin-bottom: 12px; }
 
-    /* ============== 响应式 ============== */
-
-    /* 大屏手机及以下 (≤768px) */
+    /* ============== Responsive ============== */
     @media (max-width: 768px) {
-      /* 让所有可点击元素至少 44px 高（iOS HIG 推荐） */
-      .btn { min-height: 44px; }
-      .tab { min-height: 44px; }
-
-      /* 登录页移动端 */
-      .login-wrap { padding: 16px; }
-      .login-card { padding: 36px 24px 28px; border-radius: var(--r-lg); }
-      .login-card h1 { font-size: 21px; }
-      .login-card p { font-size: 12px; margin-bottom: 24px; }
-      .login-logo { width: 64px; height: 64px; margin-bottom: 18px; }
-      .login-logo svg { width: 32px; height: 32px; }
-      .login-card input {
-        padding: 14px 16px;
-        font-size: 16px;  /* iOS 防止输入时页面缩放 */
-        margin-bottom: 16px;
+      .mobile-toggle { display:flex; align-items:center; justify-content:center; }
+      .sidebar {
+        transform: translateX(-100%);
+        box-shadow: var(--shadow-lg);
       }
-      .login-card button {
-        padding: 14px;
-        font-size: 15px;
+      .sidebar.open { transform:translateX(0); }
+      .main-content {
+        margin-left: 0;
+        padding: 64px 16px 32px;
       }
-
-      /* Header - 移动端不 sticky，让 tabs 单独 sticky */
-      .header {
-        padding: 10px 14px;
-        padding-top: max(10px, env(safe-area-inset-top));
-        position: static;
-      }
-      .header-logo { width: 32px; height: 32px; border-radius: 8px; }
-      .header-logo svg { width: 18px; height: 18px; }
-      .header h1 { font-size: 15px; }
-      .header .info { gap: 8px; font-size: 11px; }
-      .header .info span { display: none; }  /* 隐藏服务器地址，保留退出 */
-      .header button { padding: 6px 12px; font-size: 11px; }
-
-      /* Tab 栏 - sticky 在顶部 */
-      .tabs {
-        padding: 0 8px;
-        overflow-x: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        position: sticky;
-        top: 0;
-        z-index: 50;
-        background: rgba(11, 14, 31, 0.85);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-      }
-      .tabs::-webkit-scrollbar { display: none; }
-      .tab {
-        padding: 14px 14px;
-        white-space: nowrap;
-        flex-shrink: 0;
-        font-size: 13px;
-      }
-      .tab svg { width: 18px; height: 18px; }
-      /* 移动端保留文字 + 图标，更清晰 */
-      .tab span { display: inline; }
-
-      /* 内容区 */
-      .content {
-        padding: 0 12px;
-        margin: 16px auto 32px;
-      }
-      .card {
-        padding: 18px 16px;
-        border-radius: var(--r-md);
-      }
-      .card h2 {
-        font-size: 15px;
-        margin-bottom: 16px;
-      }
-
-      /* 表单 */
-      .fg { margin-bottom: 14px; }
-      .fg label { font-size: 12px; margin-bottom: 6px; }
-      .fg input, .fg select, .fg textarea {
-        padding: 12px 14px;
-        font-size: 16px;  /* iOS 防止缩放：≥16px */
-        min-height: 44px;
-      }
-      .fg textarea { min-height: 110px; }
-
-      /* 授权类型卡片 - 横向滚动选择 */
-      .lc {
-        flex-direction: row;
-        overflow-x: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        margin: 0 -16px 14px;
-        padding: 0 16px;
-        gap: 10px;
-      }
-      .lc::-webkit-scrollbar { display: none; }
-      .lc-card {
-        flex: 0 0 110px;
-        padding: 14px 10px;
-      }
-      .lc-card .nm { font-size: 14px; }
-      .lc-card .ds { font-size: 11px; }
-
-      /* 主按钮全宽 */
-      .btn-p, .btn-g { width: 100%; }
-
-      /* 生成结果区 - 注册码字号缩小 */
-      .rb {
-        padding: 20px 16px;
-        margin-top: 16px;
-      }
-      .rb .st { font-size: 13px; }
-      .rb .key {
-        font-size: 20px;
-        letter-spacing: 2px;
-        word-break: break-all;
-        line-height: 1.4;
-      }
-      .rb .inf { font-size: 12px; word-break: break-all; }
-
-      /* 表格 - 横向滚动 */
-      .card table { display: block; overflow-x: auto; white-space: nowrap; scrollbar-width: thin; }
-      .card thead, .card tbody { display: table; width: max-content; min-width: 100%; }
-      .card th, .card td { padding: 10px 12px; }
-
-      /* 历史记录表格列宽 */
-      .card th:first-child, .card td:first-child { min-width: 110px; }
-      .card .mono { font-size: 12px; }
-
-      /* 工具栏 */
-      .ab {
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-      .ab .sp { flex-basis: 100%; height: 0; }
-      .ab .btn-sm { flex: 1; min-width: 0; padding: 7px 8px; font-size: 12px; }
-      .ab .btn-sm svg { width: 14px; height: 14px; }
-
-      /* 分页 */
-      .pager { flex-direction: column; gap: 10px; }
-      .pager > div { display: flex; gap: 8px; width: 100%; }
-      .pager .btn-sm { flex: 1; }
-
-      /* 验证结果 */
-      .vr { padding: 18px 14px; margin-top: 14px; }
-      .vr .st { font-size: 17px; }
-      .vr .dt { font-size: 12px; word-break: break-all; }
-
-      /* 表单 row */
-      .fr { flex-direction: column; gap: 0; }
+      .login-card { padding:32px 24px 28px; }
+      .topbar { flex-direction:column; align-items:flex-start; }
+      .topbar .page-title { font-size:20px; }
+      .cards-grid { grid-template-columns:1fr; }
+      .sub-tabs { padding:3px; }
+      .sub-tab { font-size:12px; padding:8px 10px; }
+      .form-row { flex-direction:column; }
     }
 
-    /* 小手机 (≤380px) - 进一步压缩 */
-    @media (max-width: 380px) {
-      .login-card { padding: 36px 24px 32px; }
-      .login-card h1 { font-size: 20px; }
-      .login-logo { width: 64px; height: 64px; }
-      .login-logo svg { width: 30px; height: 30px; }
-
-      .card { padding: 16px 14px; }
-      .tab { padding: 12px 12px; font-size: 12px; }
-      .tab svg { width: 16px; height: 16px; }
-
-      .rb .key { font-size: 17px; letter-spacing: 1px; }
+    @media (max-width: 480px) {
+      .login-card { padding:24px 18px 20px; }
+      .panel-card { padding:18px 14px; }
     }
 
-    /* 横屏 (高度 < 500px) - 登录页压缩 */
-    @media (max-height: 500px) and (orientation: landscape) {
-      .login-wrap { min-height: 100vh; align-items: flex-start; padding: 20px; }
-      .login-card { padding: 24px 32px; }
-      .login-logo { width: 56px; height: 56px; margin-bottom: 14px; }
-      .login-card h1 { font-size: 20px; }
-      .login-card p { margin-bottom: 18px; }
-      .login-card input { padding: 10px 14px; margin-bottom: 12px; }
-    }
-
-    /* 触屏设备优化 - 去掉 hover 效果 */
-    @media (hover: none) {
-      .lc-card:hover { transform: none; }
-      .btn-p:hover, .btn-g:hover { transform: none; }
-      .tab:hover { color: var(--text-muted); }
-      tr:hover td { background: transparent; }
+    /* Page title with module badge */
+    .module-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15));
+      color: var(--brand-2);
+      margin-left: 10px;
+      vertical-align: middle;
     }
   </style>
 </head>
 <body>
 
-<!-- ========== 登录页 ========== -->
-<div class="login-wrap" id="lp">
+<!-- ==================== TOAST CONTAINER ==================== -->
+<div class="toast-container" id="toast"></div>
+
+<!-- ==================== LOGIN PAGE ==================== -->
+<div id="login-page">
   <div class="login-card">
-    <div class="login-logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        <circle cx="12" cy="16" r="1"/>
-      </svg>
-    </div>
-    <h1>注册机 · 管理台</h1>
-    <p>海康录像批量下载工具 — 密钥管理系统</p>
-    <input type="password" id="lpw" placeholder="请输入管理密码" autofocus>
-    <button id="btn-login">
-      <span style="display:inline-flex;align-items:center;gap:8px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-          <polyline points="10 17 15 12 10 7"/>
-          <line x1="15" y1="12" x2="3" y2="12"/>
-        </svg>
-        登 录
-      </span>
-    </button>
-    <div class="login-err" id="le"></div>
+    <div class="login-logo">&#128274;</div>
+    <h1>管理控制台</h1>
+    <p>License Manager &mdash; 设备授权管理中心</p>
+    <form id="login-form" autocomplete="off">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="login-user" placeholder="请输入用户名" value="admin" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="login-pass" placeholder="请输入密码" autocomplete="current-password">
+      </div>
+      <div class="login-error" id="login-error"></div>
+      <button type="submit" class="btn btn-primary" id="login-btn">登 录</button>
+    </form>
   </div>
 </div>
 
-<!-- ========== 主应用 ========== -->
-<div class="app" id="ap">
-  <div class="header">
-    <div class="header-left">
-      <div class="header-logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
+<!-- ==================== MAIN LAYOUT ==================== -->
+<div id="main-layout">
+  <!-- Mobile toggle -->
+  <button class="mobile-toggle" id="mobile-toggle">&#9776;</button>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="icon">&#128274;</div>
+        <h2>管理控制台</h2>
       </div>
-      <h1>注册机 · Web 管理台</h1>
     </div>
-    <div class="info">
-      <span id="si"></span>
-      <button onclick="doLogout()">退出</button>
-    </div>
-  </div>
-
-  <div class="tabs">
-    <div class="tab active" data-panel="generate" onclick="sw('generate')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-      </svg>
-      <span>生成注册码</span>
-    </div>
-    <div class="tab" data-panel="batch" onclick="sw('batch')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="7" height="7"/>
-        <rect x="14" y="3" width="7" height="7"/>
-        <rect x="3" y="14" width="7" height="7"/>
-        <rect x="14" y="14" width="7" height="7"/>
-      </svg>
-      <span>批量生成</span>
-    </div>
-    <div class="tab" data-panel="verify" onclick="sw('verify')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-        <polyline points="22 4 12 14.01 9 11.01"/>
-      </svg>
-      <span>验证注册码</span>
-    </div>
-    <div class="tab" data-panel="history" onclick="sw('history')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="12 6 12 12 16 14"/>
-      </svg>
-      <span>历史记录</span>
-    </div>
-  </div>
-
-  <div class="content">
-
-    <!-- ===== 生成注册码 ===== -->
-    <div class="panel active" id="p-generate">
-      <div class="card">
-        <h2>生成注册码</h2>
-
-        <div class="fg">
-          <label>机器码</label>
-          <input type="text" id="gmc" placeholder="A1B2C3D4E5F67890"
-                 maxlength="19" oninput="fmt(this)"
-                 style="font-family:var(--font-mono)">
-          <div class="hint" id="gmh"></div>
-        </div>
-
-        <div class="fg">
-          <label>授权类型</label>
-          <div class="lc" id="lcs">
-            <div class="lc-card" data-t="trial" onclick="sel(this)">
-              <div class="nm">试用版</div>
-              <div class="ds">7天有效期</div>
-            </div>
-            <div class="lc-card sel" data-t="standard" onclick="sel(this)">
-              <div class="nm">标准版</div>
-              <div class="ds">1年有效期（365天）</div>
-            </div>
-            <div class="lc-card" data-t="lifetime" onclick="sel(this)">
-              <div class="nm">终身版</div>
-              <div class="ds">永不过期</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="fg" id="cex" style="display:none">
-          <label>自定义过期日期</label>
-          <input type="date" id="gex" min="">
-        </div>
-
-        <div class="fg">
-          <label>备注（使用者）</label>
-          <input type="text" id="grmk" placeholder="例如：张三-财务部">
-        </div>
-
-        <button class="btn btn-p" onclick="doGen()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-          </svg>
-          生成注册码
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">功能模块</div>
+        <button class="nav-item active" data-module="nvr">
+          <span class="dot"></span>
+          <span>NVR 注册机</span>
+          <span class="badge">active</span>
         </button>
       </div>
-
-      <div class="rb" id="grs">
-        <div class="st" id="gst"></div>
-        <div class="key" id="gky"></div>
-        <div class="inf" id="gif"></div>
-        <div style="margin-top:18px">
-          <button class="btn btn-s btn-sm" onclick="cp(gid('gky').textContent)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-            </svg>
-            复制注册码
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== 批量生成 ===== -->
-    <div class="panel" id="p-batch">
-      <div class="card">
-        <h2>批量生成</h2>
-        <div class="fg">
-          <label>机器码列表（每行一个）</label>
-          <textarea id="bi"
-            placeholder="A1B2C3D4E5F67890&#10;F6DCC28F9F319381&#10;3A4B5C6D7E8F9012"></textarea>
-        </div>
-        <div class="fr">
-          <div class="fg">
-            <label>授权类型</label>
-            <select id="bt">
-              <option value="standard">标准版（1年）</option>
-              <option value="lifetime">终身版（永不过期）</option>
-              <option value="trial">试用版（7天）</option>
-            </select>
-          </div>
-        </div>
-        <button class="btn btn-p" onclick="doBatch()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7"/>
-            <rect x="14" y="3" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/>
-            <rect x="14" y="14" width="7" height="7"/>
-          </svg>
-          批量生成
+      <div class="nav-section">
+        <div class="nav-section-title">更多工具</div>
+        <button class="nav-item" data-module="dashboard">
+          <span class="dot"></span>
+          <span>概览面板</span>
+        </button>
+        <button class="nav-item" style="opacity:0.4;pointer-events:none;" title="即将上线">
+          <span class="dot"></span>
+          <span>即将上线</span>
         </button>
       </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info" id="sidebar-user">admin</div>
+      <button class="logout-btn" id="logout-btn">&#128682; 退出登录</button>
+    </div>
+  </aside>
 
-      <div class="card" id="brc" style="display:none">
-        <div class="ab">
-          <h2>生成结果</h2>
-          <div class="sp"></div>
-          <button class="btn btn-s btn-sm" onclick="expCsv()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            导出 CSV
-          </button>
-          <button class="btn btn-s btn-sm" onclick="cpAll()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-            </svg>
-            复制全部
-          </button>
+  <!-- Main content -->
+  <main class="main-content" id="main-content">
+    <!-- ===== Dashboard ===== -->
+    <div class="module-panel active" id="module-dashboard">
+      <div class="topbar">
+        <div>
+          <div class="breadcrumb">首页 <span>/ 概览</span></div>
+          <div class="page-title">概览面板</div>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>机器码</th><th>注册码</th><th>类型</th><th>过期日期</th>
-            </tr>
-          </thead>
-          <tbody id="btb"></tbody>
-        </table>
+      </div>
+      <div class="cards-grid">
+        <div class="stat-card">
+          <div class="card-icon" style="background:linear-gradient(135deg,rgba(99,102,241,0.2),rgba(139,92,246,0.15));">&#128273;</div>
+          <div class="card-value" id="stat-total">--</div>
+          <div class="card-label">已生成注册码</div>
+        </div>
+        <div class="stat-card">
+          <div class="card-icon" style="background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(6,182,212,0.1));">&#9203;</div>
+          <div class="card-value" id="stat-recent">--</div>
+          <div class="card-label">最近 7 天生成</div>
+        </div>
+        <div class="stat-card">
+          <div class="card-icon" style="background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(99,102,241,0.1));">&#10004;</div>
+          <div class="card-value" id="stat-last">--</div>
+          <div class="card-label">最新生成记录</div>
+        </div>
+      </div>
+      <div class="panel-card" style="text-align:center;padding:48px;">
+        <p style="color:var(--text-muted);margin-bottom:12px;">快速导航到功能模块</p>
+        <button class="btn-accent" onclick="switchModule('nvr')">前往 NVR 注册机 &#8594;</button>
       </div>
     </div>
 
-    <!-- ===== 验证注册码 ===== -->
-    <div class="panel" id="p-verify">
-      <div class="card">
-        <h2>验证注册码</h2>
-        <div class="fg">
-          <label>机器码</label>
-          <input type="text" id="vmc" maxlength="19" style="font-family:var(--font-mono)">
+    <!-- ===== NVR Module ===== -->
+    <div class="module-panel" id="module-nvr">
+      <div class="topbar">
+        <div>
+          <div class="breadcrumb">首页 <span>/ NVR 注册机</span></div>
+          <div class="page-title">NVR 注册机<span class="module-badge">NVR</span></div>
         </div>
-        <div class="fg">
-          <label>注册码</label>
-          <input type="text" id="vky" maxlength="19" style="font-family:var(--font-mono)">
-        </div>
-        <button class="btn btn-g" onclick="doVer()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-            <polyline points="22 4 12 14.01 9 11.01"/>
-          </svg>
-          验证
-        </button>
       </div>
-      <div class="vr" id="vrs">
-        <div class="st" id="vst"></div>
-        <div class="dt" id="vdt"></div>
+      <div class="sub-tabs" id="nvr-tabs">
+        <button class="sub-tab active" data-panel="gen">&#128273; 生成注册码</button>
+        <button class="sub-tab" data-panel="batch">&#128196; 批量生成</button>
+        <button class="sub-tab" data-panel="verify">&#128270; 验证注册码</button>
+        <button class="sub-tab" data-panel="history">&#128214; 历史记录</button>
       </div>
-    </div>
 
-    <!-- ===== 历史记录 ===== -->
-    <div class="panel" id="p-history">
-      <div class="card">
-        <div class="ab">
-          <h2>历史记录</h2>
-          <div class="sp"></div>
-          <button class="btn btn-s btn-sm" onclick="expH()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            导出全部
-          </button>
-          <button class="btn btn-d btn-sm" onclick="clrH()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-            清空记录
-          </button>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>时间</th><th>机器码</th><th>注册码</th><th>类型</th>
-              <th>过期</th><th>备注</th><th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="htb"></tbody>
-        </table>
-        <div class="pager">
-          <div class="inf" id="pgi"></div>
-          <div>
-            <button class="btn btn-s btn-sm" id="pv" onclick="pgNav(-1)">上一页</button>
-            <button class="btn btn-s btn-sm" id="nx" onclick="pgNav(1)">下一页</button>
+      <!-- Panel: Generate -->
+      <div class="sub-panel active" id="panel-gen">
+        <div class="panel-card">
+          <h3>&#128273; 生成注册码</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>机器码 (16位HEX)</label>
+              <input type="text" id="gen-mc" placeholder="例: A1B2C3D4E5F67890" maxlength="16">
+            </div>
+            <div class="form-group" style="max-width:160px;">
+              <label>授权类型</label>
+              <select id="gen-type">
+                <option value="trial">试用版 (7天)</option>
+                <option value="standard">标准版 (365天)</option>
+                <option value="lifetime" selected>终身版</option>
+              </select>
+            </div>
           </div>
+          <div class="form-row">
+            <div class="form-group" style="max-width:200px;">
+              <label>备注</label>
+              <input type="text" id="gen-operator" placeholder="操作人/备注">
+            </div>
+          </div>
+          <button class="btn-accent" onclick="doGenerate()">生成注册码</button>
+          <div class="result-box" id="gen-result" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Panel: Batch -->
+      <div class="sub-panel" id="panel-batch">
+        <div class="panel-card">
+          <h3>&#128196; 批量生成</h3>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">每行一个机器码，支持带分隔符</p>
+          <div class="form-row">
+            <div class="form-group" style="max-width:160px;">
+              <label>授权类型</label>
+              <select id="batch-type">
+                <option value="trial">试用版</option>
+                <option value="standard">标准版</option>
+                <option value="lifetime" selected>终身版</option>
+              </select>
+            </div>
+            <div class="form-group" style="max-width:200px;">
+              <label>备注</label>
+              <input type="text" id="batch-operator" placeholder="操作人/备注">
+            </div>
+          </div>
+          <textarea id="batch-codes" placeholder="A1B2C3D4E5F67890&#10;1234-5678-9ABC-DEF0&#10;...&#10;"></textarea>
+          <button class="btn-accent" onclick="doBatch()" style="margin-top:12px;">批量生成</button>
+          <div class="result-box" id="batch-result" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Panel: Verify -->
+      <div class="sub-panel" id="panel-verify">
+        <div class="panel-card">
+          <h3>&#128270; 验证注册码</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>机器码</label>
+              <input type="text" id="verify-mc" placeholder="16位机器码">
+            </div>
+            <div class="form-group">
+              <label>注册码</label>
+              <input type="text" id="verify-key" placeholder="XXXX-XXXX-XXXX-XXXX">
+            </div>
+          </div>
+          <button class="btn-accent" onclick="doVerify()">验证</button>
+          <div class="result-box" id="verify-result" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Panel: History -->
+      <div class="sub-panel" id="panel-history">
+        <div class="panel-card">
+          <h3>&#128214; 历史记录</h3>
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm" onclick="doExport()">&#128190; 导出 CSV</button>
+            <button class="btn btn-ghost btn-sm btn-danger" onclick="doClear()">&#128465; 清空记录</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>机器码</th><th>注册码</th><th>类型</th><th>有效期</th><th>备注</th><th>时间</th><th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="history-pager"></div>
         </div>
       </div>
     </div>
-
-  </div>
+  </main>
 </div>
 
 <script>
-/* ============================================================
- * 全局状态
- * ============================================================ */
-var _tk = '';      // 登录 token
-var pg  = 1;       // 当前页码
-var slt = 'standard';  // 当前选中的授权类型
+// ==================== STATE ====================
+var TOKEN = localStorage.getItem('kg_token') || null;
+var USER = localStorage.getItem('kg_user') || null;
+var ACTIVE_MODULE = 'nvr';
+var HIST_PAGE = 1, HIST_SIZE = 20;
+var API_BASE = '';
 
-/* ============================================================
- * 工具函数
- * ============================================================ */
-function gid(id) { return document.getElementById(id); }
+// ==================== TOAST ====================
+function toast(msg, type) {
+  type = type || '';
+  var el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(function(){ el.style.opacity='0'; el.style.transition='opacity 0.3s';
+    setTimeout(function(){ el.remove(); },300); },2800);
+}
 
-/** 统一 API 调用 */
-function api(method, path, body) {
-  var headers = { 'Content-Type': 'application/json' };
-  if (_tk) headers['Authorization'] = 'Bearer ' + _tk;
+// ==================== API ====================
+function apiPost(path, body) {
+  var headers = { 'Content-Type':'application/json' };
+  if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
   return fetch(path, {
-    method: method,
-    headers: headers,
+    method:'POST', headers:headers,
     body: JSON.stringify(body || {})
-  })
-    .then(function (r) { return r.json(); })
-    .catch(function (e) { return { ok: false, error: '网络错误: ' + e.message }; });
+  }).then(function(r){ return r.json(); });
 }
 
-/** HTML 转义，防 XSS */
-function escapeHtml(s) {
-  var d = document.createElement('div');
-  d.textContent = s == null ? '' : String(s);
-  return d.innerHTML;
-}
-
-/** 复制文本到剪贴板 */
-function cpText(text) {
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(function () {
-      showToast('已复制到剪贴板');
-    });
-  } else {
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('已复制');
-  }
-}
-
-/** 轻量 toast 提示 */
-function showToast(msg) {
-  var t = document.createElement('div');
-  t.textContent = msg;
-  t.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);' +
-    'background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:10px 20px;' +
-    'border-radius:10px;box-shadow:0 8px 24px rgba(139,92,246,0.4);' +
-    'font-size:13px;font-weight:500;z-index:9999;' +
-    'animation:fadeIn 0.3s ease;letter-spacing:0.5px;';
-  document.body.appendChild(t);
-  setTimeout(function () {
-    t.style.opacity = '0';
-    t.style.transition = 'opacity 0.3s';
-    setTimeout(function () { document.body.removeChild(t); }, 300);
-  }, 1500);
-}
-
-/** 触发文件下载 */
-function dl(content, filename) {
-  var blob = new Blob(['\ufeff' + content], { type: 'text/csv;charset=utf-8' });
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-}
-
-/* ============================================================
- * 登录 / 登出
- * ============================================================ */
-function doLogin() {
-  var btn = gid('btn-login'), le = gid('le'), pw = gid('lpw').value;
-  btn.disabled = true;
-  btn.querySelector('span').textContent = '登录中...';
-  le.textContent = '';
-
-  api('POST', '/api/login', { password: pw }).then(function (r) {
+// ==================== LOGIN ====================
+document.getElementById('login-form').addEventListener('submit', function(e){
+  e.preventDefault();
+  var u = document.getElementById('login-user').value.trim();
+  var p = document.getElementById('login-pass').value;
+  var btn = document.getElementById('login-btn');
+  var err = document.getElementById('login-error');
+  if (!u || !p) { err.textContent = '请输入用户名和密码'; return; }
+  btn.disabled = true; btn.textContent = '登录中...'; err.textContent = '';
+  apiPost('/api/login', { username: u, password: p }).then(function(r){
     if (r.ok) {
-      _tk = r.token;
-      gid('lp').style.display = 'none';
-      gid('ap').style.display = 'block';
-      loadH();
+      TOKEN = r.token; USER = r.username || u;
+      localStorage.setItem('kg_token', TOKEN);
+      localStorage.setItem('kg_user', USER);
+      showMain();
     } else {
-      le.textContent = r.error || '登录失败';
-      btn.disabled = false;
-      btn.querySelector('span').textContent = '登 录';
+      err.textContent = r.error || '登录失败';
     }
-  }).catch(function (e) {
-    le.textContent = '网络错误: ' + e;
-    btn.disabled = false;
-    btn.querySelector('span').textContent = '登 录';
+  }).catch(function(){
+    err.textContent = '网络错误，请重试';
+  }).finally(function(){
+    btn.disabled = false; btn.textContent = '登 录';
   });
-}
-
-function doLogout() {
-  api('POST', '/api/logout', {}).finally(function () { location.reload(); });
-}
-
-/* ============================================================
- * 导航
- * ============================================================ */
-function sw(name) {
-  var panels = ['generate', 'batch', 'verify', 'history'];
-  document.querySelectorAll('.tab').forEach(function (t, i) {
-    t.classList.toggle('active', panels[i] === name);
-  });
-  document.querySelectorAll('.panel').forEach(function (p) {
-    p.classList.remove('active');
-  });
-  gid('p-' + name).classList.add('active');
-  if (name === 'history') loadH();
-}
-
-/* ============================================================
- * 生成注册码
- * ============================================================ */
-function sel(card) {
-  document.querySelectorAll('.lc-card').forEach(function (c) {
-    c.classList.remove('sel');
-  });
-  card.classList.add('sel');
-  slt = card.dataset.t;
-
-  var showCustom = slt !== 'lifetime';
-  gid('cex').style.display = showCustom ? 'block' : 'none';
-  if (showCustom) {
-    gid('gex').min = new Date().toISOString().split('T')[0];
-  }
-}
-
-/** 机器码输入格式化 + 实时校验 */
-function fmt(input) {
-  var v = input.value.replace(/[^0-9A-Fa-f]/g, '').toUpperCase().slice(0, 16);
-  input.value = v;
-  var h = gid('gmh');
-  if (!v) { h.textContent = ''; return; }
-  if (v.length < 16) {
-    h.textContent = v.length + '/16 位';
-    h.style.color = 'var(--text-muted)';
-  } else {
-    h.textContent = '✓ 格式正确';
-    h.style.color = 'var(--success)';
-  }
-}
-
-function doGen() {
-  api('POST', '/api/generate', {
-    machine_code: gid('gmc').value,
-    license_type: slt,
-    expiry_date: gid('gex').value || null,
-    operator: gid('grmk').value || 'web'
-  }).then(function (r) {
-    var box = gid('grs');
-    box.style.display = 'block';
-    box.classList.remove('err');
-
-    if (r.ok) {
-      gid('gst').textContent = '✓ 生成成功';
-      gid('gst').style.color = 'var(--success)';
-      gid('gky').textContent = r.activation_key;
-      gid('gif').textContent = '机器码: ' + r.machine_code +
-        '  ·  类型: ' + r.license_name +
-        '  ·  过期: ' + r.expiry_date;
-    } else {
-      box.classList.add('err');
-      gid('gst').textContent = '✕ 生成失败';
-      gid('gst').style.color = 'var(--danger)';
-      gid('gky').textContent = r.error || '错误';
-      gid('gif').textContent = '';
-    }
-  });
-}
-
-/* ============================================================
- * 批量生成
- * ============================================================ */
-function doBatch() {
-  api('POST', '/api/batch', {
-    machine_codes: gid('bi').value,
-    license_type: gid('bt').value
-  }).then(function (r) {
-    if (!r.ok) return;
-    gid('brc').style.display = 'block';
-
-    var type = gid('bt').value;
-    var typeLabel = type === 'trial'    ? '试用版'
-                  : type === 'standard' ? '标准版'
-                  :                       '终身版';
-
-    gid('btb').innerHTML = r.results.map(function (row) {
-      if (row.ok || row.activation_key) {
-        return '<tr>' +
-          '<td class="mono">' + escapeHtml(row.machine_code) + '</td>' +
-          '<td class="mono">' + escapeHtml(row.activation_key) + '</td>' +
-          '<td><span class="tag tag-' + type + '">' + typeLabel + '</span></td>' +
-          '<td>' + escapeHtml(row.expiry_date) + '</td>' +
-          '</tr>';
-      }
-      return '<tr>' +
-        '<td class="mono">' + escapeHtml(row.machine_code) + '</td>' +
-        '<td colspan="3" style="color:var(--danger)">' + escapeHtml(row.error) + '</td>' +
-        '</tr>';
-    }).join('');
-  });
-}
-
-function cpAll() {
-  var rows = document.querySelectorAll('#btb tr');
-  var lines = [];
-  rows.forEach(function (tr) {
-    var t = tr.querySelectorAll('td');
-    if (t.length >= 4) {
-      lines.push(t[0].textContent + ' | ' + t[1].textContent +
-                 ' | ' + t[2].textContent + ' | ' + t[3].textContent);
-    }
-  });
-  cpText(lines.join('\n'));
-}
-
-function expCsv() {
-  var rows = document.querySelectorAll('#btb tr');
-  var csv = '机器码,注册码,授权类型,过期日期\n';
-  rows.forEach(function (tr) {
-    var t = tr.querySelectorAll('td');
-    if (t.length >= 4) {
-      csv += t[0].textContent + ',' + t[1].textContent + ',' +
-             t[2].textContent + ',' + t[3].textContent + '\n';
-    }
-  });
-  dl(csv, '批量注册码.csv');
-}
-
-/* ============================================================
- * 验证注册码
- * ============================================================ */
-function doVer() {
-  api('POST', '/api/verify', {
-    machine_code: gid('vmc').value,
-    activation_key: gid('vky').value
-  }).then(function (r) {
-    var box = gid('vrs');
-    box.style.display = 'block';
-    var checkIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-    var xIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
-
-    if (r.ok && r.valid) {
-      box.className = 'vr ok';
-      gid('vst').innerHTML = checkIcon + ' 验证通过';
-      gid('vdt').textContent = '类型: ' + r.license_name +
-                               '  ·  过期: ' + r.expiry_date;
-    } else {
-      box.className = 'vr fail';
-      gid('vst').innerHTML = xIcon + ' 验证失败';
-      gid('vdt').textContent = r.error || '注册码无效';
-    }
-  });
-}
-
-/* ============================================================
- * 历史记录
- * ============================================================ */
-function loadH() {
-  api('POST', '/api/history', { page: pg, size: 20 }).then(function (r) {
-    if (!r.ok) return;
-
-    if (!r.records || r.records.length === 0) {
-      gid('htb').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:60px;color:var(--text-muted);">' +
-        '<div style="opacity:0.5;margin-bottom:8px;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></div>' +
-        '暂无记录</td></tr>';
-      gid('pgi').textContent = '';
-      gid('pv').disabled = true;
-      gid('nx').disabled = true;
-      return;
-    }
-
-    gid('htb').innerHTML = r.records.map(function (rec) {
-      return '<tr>' +
-        '<td style="color:var(--text-muted);font-size:12px;">' + escapeHtml(rec.created_at) + '</td>' +
-        '<td class="mono">' + escapeHtml(rec.machine_code) + '</td>' +
-        '<td class="mono">' + escapeHtml(rec.activation_key) + '</td>' +
-        '<td><span class="tag tag-' + rec.license_type + '">' +
-            escapeHtml(rec.license_name) + '</span></td>' +
-        '<td>' + escapeHtml(rec.expiry_date) + '</td>' +
-        '<td>' + escapeHtml(rec.operator || '') + '</td>' +
-        '<td><button class="btn btn-d btn-sm" onclick="delR(' + rec.id + ')">删除</button></td>' +
-        '</tr>';
-    }).join('');
-
-    var totalPages = Math.ceil(r.total / r.size);
-    gid('pgi').textContent = '共 ' + r.total + ' 条，第 ' + r.page + '/' + totalPages + ' 页';
-    gid('pv').disabled = pg <= 1;
-    gid('nx').disabled = pg >= totalPages;
-  });
-}
-
-/** 分页跳转（dir = -1 / +1） */
-function pgNav(dir) {
-  pg += dir;
-  if (pg < 1) pg = 1;
-  loadH();
-}
-
-function delR(id) {
-  if (!confirm('确定删除？')) return;
-  api('POST', '/api/delete', { id: id }).then(function (r) {
-    if (r.ok) { showToast('已删除'); loadH(); }
-  });
-}
-
-function clrH() {
-  if (!confirm('确定清空所有记录？不可恢复！')) return;
-  api('POST', '/api/clear', {}).then(function (r) {
-    if (r.ok) { showToast('已清空'); loadH(); }
-  });
-}
-
-function expH() {
-  api('POST', '/api/export', {}).then(function (r) {
-    if (r.ok) { dl(r.csv, '注册记录.csv'); showToast('已导出'); }
-  });
-}
-
-/* ============================================================
- * 简易别名：cp = cpText（供 HTML 内联 onclick 调用）
- * ============================================================ */
-var cp = cpText;
-
-/* ============================================================
- * 初始化
- * ============================================================ */
-gid('si').textContent = location.hostname + (location.port ? ':' + location.port : '');
-gid('btn-login').addEventListener('click', doLogin);
-gid('lpw').addEventListener('keydown', function (e) {
-  if (e.key === 'Enter') doLogin();
 });
+
+// ==================== LOGOUT ====================
+function doLogout() {
+  apiPost('/api/logout', {}).then(function(){});
+  TOKEN = null; USER = null;
+  localStorage.removeItem('kg_token');
+  localStorage.removeItem('kg_user');
+  showLogin();
+}
+
+// ==================== PAGE SWITCH ====================
+function showLogin() {
+  document.getElementById('login-page').classList.remove('hidden');
+  document.getElementById('main-layout').classList.remove('active');
+}
+function showMain() {
+  document.getElementById('login-page').classList.add('hidden');
+  document.getElementById('main-layout').classList.add('active');
+  document.getElementById('sidebar-user').textContent = USER || 'admin';
+  switchModule(ACTIVE_MODULE);
+  loadDashboardStats();
+}
+function switchModule(name) {
+  ACTIVE_MODULE = name;
+  document.querySelectorAll('.module-panel').forEach(function(p){ p.classList.remove('active'); });
+  var target = document.getElementById('module-' + name);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n){
+    n.classList.toggle('active', n.dataset.module === name);
+  });
+  if (name === 'nvr') activateSubPanel('gen');
+  // Close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+}
+function loadDashboardStats() {
+  apiPost('/api/history', { page:1, size:1 }).then(function(r){
+    if (r.ok) document.getElementById('stat-total').textContent = r.total || 0;
+  });
+  apiPost('/api/history', { page:1, size:1 }).then(function(r){
+    if (r.ok && r.records && r.records.length>0) {
+      document.getElementById('stat-last').textContent = r.records[0].machine_code;
+    } else {
+      document.getElementById('stat-last').textContent = '无';
+    }
+  });
+}
+
+// ==================== SUB-TABS ====================
+function activateSubPanel(name) {
+  document.querySelectorAll('#nvr-tabs .sub-tab').forEach(function(t){
+    t.classList.toggle('active', t.dataset.panel === name);
+  });
+  document.querySelectorAll('.sub-panel').forEach(function(p){
+    p.classList.toggle('active', p.id === 'panel-' + name);
+  });
+  if (name === 'history') loadHistory();
+}
+document.getElementById('nvr-tabs').addEventListener('click', function(e){
+  if (e.target.classList.contains('sub-tab')) {
+    activateSubPanel(e.target.dataset.panel);
+  }
+});
+
+// ==================== NVR: GENERATE ====================
+function doGenerate() {
+  var mc = document.getElementById('gen-mc').value.trim();
+  var type = document.getElementById('gen-type').value;
+  var op = document.getElementById('gen-operator').value.trim();
+  var box = document.getElementById('gen-result');
+  if (!mc) { toast('请输入机器码','error'); return; }
+  apiPost('/api/generate', { machine_code:mc, license_type:type, operator:op }).then(function(r){
+    box.style.display = 'block';
+    if (r.ok) {
+      box.innerHTML = '<div style="margin-bottom:8px;color:var(--success);">&#10004; 生成成功</div>' +
+        '<div><b>机器码:</b> ' + r.machine_code + '</div>' +
+        '<div><b>注册码:</b> <span style="color:var(--accent);font-weight:600;">' + r.activation_key + '</span></div>' +
+        '<div><b>类型:</b> ' + r.license_name + '&nbsp;&nbsp;<b>有效期:</b> ' + r.expiry_date + '</div>';
+      toast('注册码已生成','success');
+    } else {
+      box.innerHTML = '<div style="color:var(--danger);">&#10008; ' + (r.error||'生成失败') + '</div>';
+    }
+  }).catch(function(){
+    box.style.display='block'; box.innerHTML='<div style="color:var(--danger);">网络错误</div>';
+  });
+}
+
+// ==================== NVR: BATCH ====================
+function doBatch() {
+  var codes = document.getElementById('batch-codes').value.trim();
+  var type = document.getElementById('batch-type').value;
+  var op = document.getElementById('batch-operator').value.trim();
+  var box = document.getElementById('batch-result');
+  if (!codes) { toast('请输入机器码','error'); return; }
+  apiPost('/api/batch', { machine_codes:codes, license_type:type, operator:op }).then(function(r){
+    box.style.display = 'block';
+    if (r.ok && r.results) {
+      var html = '<table style="width:100%;"><tr><th>机器码</th><th>注册码</th><th>状态</th></tr>';
+      r.results.forEach(function(row){
+        var status = row.ok ? '<span style="color:var(--success);">&#10004;</span>' : '<span style="color:var(--danger);">'+(row.error||'失败')+'</span>';
+        html += '<tr><td class="code">'+row.machine_code+'</td><td class="code">'+(row.activation_key||'--')+'</td><td>'+status+'</td></tr>';
+      });
+      html += '</table>';
+      box.innerHTML = html;
+      toast('批量生成完成','success');
+    } else {
+      box.innerHTML = '<div style="color:var(--danger);">' + (r.error||'生成失败') + '</div>';
+    }
+  }).catch(function(){
+    box.style.display='block'; box.innerHTML='<div style="color:var(--danger);">网络错误</div>';
+  });
+}
+
+// ==================== NVR: VERIFY ====================
+function doVerify() {
+  var mc = document.getElementById('verify-mc').value.trim();
+  var key = document.getElementById('verify-key').value.trim();
+  var box = document.getElementById('verify-result');
+  if (!mc || !key) { toast('请输入机器码和注册码','error'); return; }
+  apiPost('/api/verify', { machine_code:mc, activation_key:key }).then(function(r){
+    box.style.display = 'block';
+    if (r.ok) {
+      if (r.valid) {
+        box.innerHTML = '<div style="color:var(--success);margin-bottom:8px;">&#10004; 验证通过</div>' +
+          '<div><b>类型:</b> ' + r.license_name + '&nbsp;&nbsp;<b>有效期:</b> ' + r.expiry_date + '</div>';
+      } else {
+        box.innerHTML = '<div style="color:var(--danger);">&#10008; 验证失败: ' + (r.error||'注册码与机器码不匹配') + '</div>';
+      }
+    } else {
+      box.innerHTML = '<div style="color:var(--danger);">' + (r.error||'验证出错') + '</div>';
+    }
+  }).catch(function(){
+    box.style.display='block'; box.innerHTML='<div style="color:var(--danger);">网络错误</div>';
+  });
+}
+
+// ==================== NVR: HISTORY ====================
+function loadHistory() {
+  apiPost('/api/history', { page:HIST_PAGE, size:HIST_SIZE }).then(function(r){
+    var tbody = document.getElementById('history-tbody');
+    var pager = document.getElementById('history-pager');
+    if (r.ok) {
+      if (r.records.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">暂无记录</td></tr>';
+      } else {
+        var typeLabel = { trial:'试用版', standard:'标准版', lifetime:'终身版' };
+        var typeClass = { trial:'label-trial', standard:'label-standard', lifetime:'label-lifetime' };
+        tbody.innerHTML = r.records.map(function(rec){
+          return '<tr><td>'+rec.id+'</td>' +
+            '<td class="code">'+rec.machine_code+'</td>' +
+            '<td class="code">'+rec.activation_key+'</td>' +
+            '<td><span class="label '+typeClass[rec.license_type]+'">'+typeLabel[rec.license_type]+'</span></td>' +
+            '<td>'+rec.expiry_date+'</td>' +
+            '<td>'+rec.operator+'</td>' +
+            '<td style="font-size:11px;">'+rec.created_at+'</td>' +
+            '<td><button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="doDelete('+rec.id+')">删除</button></td></tr>';
+        }).join('');
+      }
+      var totalPages = Math.ceil(r.total / HIST_SIZE);
+      pager.innerHTML = '<button '+(HIST_PAGE<=1?'disabled':'')+' onclick="goPage('+(HIST_PAGE-1)+')">上一页</button>' +
+        '<span>第 '+HIST_PAGE+' / '+totalPages+' 页 (共 '+r.total+' 条)</span>' +
+        '<button '+(HIST_PAGE>=totalPages?'disabled':'')+' onclick="goPage('+(HIST_PAGE+1)+')">下一页</button>';
+    } else {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--danger);padding:24px;">加载失败: '+(r.error||'未知错误')+'</td></tr>';
+    }
+  }).catch(function(){
+    document.getElementById('history-tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--danger);padding:24px;">网络错误</td></tr>';
+  });
+}
+function goPage(p) {
+  HIST_PAGE = p;
+  loadHistory();
+}
+function doDelete(id) {
+  if (!confirm('确定删除记录 #'+id+' 吗？')) return;
+  apiPost('/api/delete', { id:id }).then(function(r){
+    if (r.ok) { toast('已删除','success'); loadHistory(); }
+    else toast('删除失败','error');
+  });
+}
+function doClear() {
+  if (!confirm('确定清空所有历史记录？此操作不可恢复！')) return;
+  apiPost('/api/clear', {}).then(function(r){
+    if (r.ok) { toast('已清空','success'); loadHistory(); }
+    else toast('清空失败','error');
+  });
+}
+function doExport() {
+  apiPost('/api/export', {}).then(function(r){
+    if (r.ok && r.csv) {
+      var blob = new Blob(['\uFEFF'+r.csv], {type:'text/csv;charset=utf-8;'});
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'keygen_records_' + new Date().toISOString().slice(0,10) + '.csv';
+      a.click();
+      toast('CSV 已导出','success');
+    } else toast('导出失败','error');
+  });
+}
+
+// ==================== MODULE NAVIGATION ====================
+document.querySelectorAll('.nav-item[data-module]').forEach(function(item){
+  item.addEventListener('click', function(){
+    var mod = this.dataset.module;
+    if (!mod) return;
+    switchModule(mod);
+  });
+});
+
+// ==================== LOGOUT BUTTON ====================
+document.getElementById('logout-btn').addEventListener('click', doLogout);
+
+// ==================== MOBILE TOGGLE ====================
+document.getElementById('mobile-toggle').addEventListener('click', function(){
+  document.getElementById('sidebar').classList.toggle('open');
+});
+document.addEventListener('click', function(e){
+  var sidebar = document.getElementById('sidebar');
+  var toggle = document.getElementById('mobile-toggle');
+  if (window.innerWidth <= 768 && sidebar.classList.contains('open') &&
+      !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+    sidebar.classList.remove('open');
+  }
+});
+
+// ==================== INIT ====================
+(function init(){
+  document.getElementById('login-pass').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') document.getElementById('login-form').dispatchEvent(new Event('submit'));
+  });
+  if (TOKEN) {
+    // Verify existing token is still valid
+    apiPost('/api/history', { page:1, size:1 }).then(function(r){
+      if (r.ok) { showMain(); } else { TOKEN=null; showLogin(); }
+    }).catch(function(){ showLogin(); });
+  }
+})();
 </script>
 </body>
 </html>

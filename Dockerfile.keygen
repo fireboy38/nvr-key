@@ -15,7 +15,8 @@ COPY keygen_web.html .
 RUN mkdir -p /data
 
 # 默认配置（运行时可通过环境变量覆盖）
-ENV KEYGEN_ADMIN_PASSWORD=hy8104905 \
+ENV KEYGEN_ADMIN_USERNAME=admin \
+    KEYGEN_ADMIN_PASSWORD=admin123 \
     KEYGEN_HOST=0.0.0.0 \
     KEYGEN_PORT=5800 \
     HOME=/data \

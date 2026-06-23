@@ -1,14 +1,19 @@
-# nvr-key · 注册机 Web 管理台
+# nvr-key · 管理控制台
 
-海康录像批量下载工具的密钥管理系统。基于 Python 标准库实现，零第三方依赖（部署脚本除外）。
+设备授权管理中心，采用模块化架构设计。当前包含 **NVR 注册机**模块，后续可扩展更多管理工具。
+
+基于 Python 标准库实现，零第三方依赖（部署脚本除外）。
 
 ## 功能特性
 
-- 单/批量生成激活密钥（试用版 / 标准版 / 终身版）
+- **NVR 注册机** — 单/批量生成激活密钥（试用版 / 标准版 / 终身版）
 - 在线验证密钥与机器码匹配关系
 - 完整的历史记录管理（增删、导出 CSV、清空）
+- 概览面板 — 实时统计生成记录
+- 模块化侧边栏导航 — 可扩展更多工具模块
 - 基于 HMAC-SHA256 的密钥签名，绑定机器码 + 过期日期
 - 内存级会话管理，2 小时 TTL，登出即失效
+- 深色玻璃拟态 UI，响应式设计，适配移动端
 - 自带 Dockerfile 和 docker-compose，开箱即用
 
 ## 目录结构
@@ -18,7 +23,7 @@ nvr-key/
 ├── core/
 │   └── license_manager.py    # 许可证核心模块：机器码、密钥生成/验证、注册管理
 ├── keygen_web.py             # Web 后端：HTTP 路由 + SQLite 记录 + Session
-├── keygen_web.html           # Web 前端：登录页 + 4 个功能面板
+├── keygen_web.html           # Web 前端：模块化布局 + 登录 + 功能面板
 ├── Dockerfile.keygen         # 容器镜像构建
 ├── docker-compose.keygen.yml # 容器编排（含 healthcheck）
 ├── deploy_keygen.py          # 远程 SSH 一键部署脚本（依赖 paramiko）
@@ -32,22 +37,26 @@ nvr-key/
 ```bash
 python keygen_web.py
 # 访问 http://localhost:5800
-# 默认管理密码: hy8104905 (建议通过环境变量修改)
+# 默认登录: admin / admin123（建议通过环境变量修改）
 ```
 
 可通过环境变量覆盖默认配置:
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
+| `KEYGEN_ADMIN_USERNAME` | `admin` | 管理用户名 |
+| `KEYGEN_ADMIN_PASSWORD` | `admin123` | 管理密码 |
 | `KEYGEN_HOST` | `0.0.0.0` | 监听地址 |
 | `KEYGEN_PORT` | `5800` | 监听端口 |
-| `KEYGEN_ADMIN_PASSWORD` | `hy8104905` | 管理密码 |
 
 ### Docker 部署
 
 ```bash
 # 构建并启动
 docker compose -f docker-compose.keygen.yml up -d --build
+
+# 使用自定义密码
+KEYGEN_ADMIN_PASSWORD=MyP@ssw0rd docker compose -f docker-compose.keygen.yml up -d --build
 
 # 查看日志
 docker logs -f hikvision-keygen
@@ -64,6 +73,12 @@ python deploy_keygen.py
 ```
 
 部署脚本默认连接 `47.104.161.77`，可通过环境变量 `DEPLOY_HOST` / `DEPLOY_USER` / `DEPLOY_PASS` / `DEPLOY_PORT` 覆盖。
+
+## 界面导航
+
+- **概览面板** — 首页仪表盘，显示生成统计
+- **NVR 注册机** — 生成注册码 / 批量生成 / 验证注册码 / 历史记录
+- **未来模块** — 架构已支持扩展，添加新模块只需新增后端路由 + 前端面板
 
 ## 密钥算法
 
@@ -97,6 +112,6 @@ python -m core.license_manager --check
 
 ## 安全提示
 
-- 默认管理密码仅用于本地测试，生产环境务必通过环境变量修改
+- 默认凭据仅用于本地测试，生产环境务必通过环境变量修改
 - `SECRET_KEY` 硬编码在 `license_manager.py` 中，如需更高安全性请改为从环境变量读取
 - 部署脚本 `deploy_keygen.py` 中的服务器凭据同样建议通过环境变量注入

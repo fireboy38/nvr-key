@@ -9,7 +9,8 @@ services:
     ports:
       - "5800:5800"
     environment:
-      - KEYGEN_ADMIN_PASSWORD=${KEYGEN_ADMIN_PASSWORD:-hy8104905}
+      - KEYGEN_ADMIN_USERNAME=${KEYGEN_ADMIN_USERNAME:-admin}
+      - KEYGEN_ADMIN_PASSWORD=${KEYGEN_ADMIN_PASSWORD:-admin123}
       - KEYGEN_HOST=0.0.0.0
       - KEYGEN_PORT=5800
     volumes:
